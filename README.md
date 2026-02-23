@@ -39,6 +39,11 @@ meson compile -C build
 meson install -C build
 ```
 
+## Acknowledgments
+
+- [suppaftp](https://github.com/veeso/suppaftp) — Super FTP/FTPS client library for Rust, powering our FTP/FTPS protocol support
+- [russh](https://github.com/Eugeny/russh) — Pure-Rust SSH implementation used for SFTP connections
+
 ## License
 
 Cargo is licensed under the [GNU General Public License v2.0](LICENSE).
