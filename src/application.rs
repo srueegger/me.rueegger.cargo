@@ -90,8 +90,8 @@ impl CargoApplication {
             .developers(vec!["Samuel Rüegger"])
             .copyright("© 2026 Samuel Rüegger")
             .license_type(gtk::License::Gpl20Only)
-            .website("https://github.com/srueegger/cargo")
-            .issue_url("https://github.com/srueegger/cargo/issues")
+            .website("https://github.com/srueegger/me.rueegger.cargo")
+            .issue_url("https://github.com/srueegger/me.rueegger.cargo/issues")
             .translator_credits(gettext("translator-credits"))
             .build();
 
