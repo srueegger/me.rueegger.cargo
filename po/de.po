@@ -1,0 +1,46 @@
+# German translation for Cargo
+# Copyright (C) 2026 Samuel Rüegger
+# This file is distributed under the same license as the cargo-app package.
+# Samuel Rüegger <samuel@rueegger>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cargo-app 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-23\n"
+"PO-Revision-Date: 2026-02-23\n"
+"Last-Translator: Samuel Rüegger <samuel@rueegger>\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: data/me.rueegger.cargo.desktop.in:3
+msgid "Transfer files between local and remote locations"
+msgstr "Dateien zwischen lokalen und entfernten Speicherorten übertragen"
+
+#: data/ui/window.ui
+msgid "Site Manager"
+msgstr "Seitenverwaltung"
+
+#: data/ui/window.ui
+msgid "Main Menu"
+msgstr "Hauptmenü"
+
+#: data/ui/window.ui
+msgid "Cargo"
+msgstr "Cargo"
+
+#: data/ui/window.ui
+msgid "Connect to a server to start transferring files"
+msgstr "Verbinden Sie sich mit einem Server, um Dateien zu übertragen"
+
+#: data/ui/window.ui
+msgid "_About Cargo"
+msgstr "_Über Cargo"
+
+#: src/application.rs
+msgid "translator-credits"
+msgstr "Samuel Rüegger <samuel@rueegger>"

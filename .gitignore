@@ -1,0 +1,36 @@
+# Rust
+/target
+
+# Meson
+/build
+/builddir
+/_build
+
+# GResource compiled files
+*.gresource
+src/*.gresource
+
+# Translation binaries
+*.mo
+*.gmo
+
+# Backup files
+*~
+*.bak
+*.swp
+.*.swp
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Build artifacts
+*.o
+*.so
+*.a
+
+# Flatpak
+.flatpak-builder/
+_flatpak/
+cargo-sources.json

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Symbolic icon: simplified cargo crate with transfer arrows -->
+  <!-- Uses currentColor for GNOME symbolic icon theming -->
+
+  <!-- Crate outline -->
+  <rect x="1" y="3" width="10" height="10" rx="1" ry="1"
+        fill="none" stroke="currentColor" stroke-width="1.5"/>
+
+  <!-- Crate horizontal band -->
+  <line x1="1" y1="8" x2="11" y2="8"
+        stroke="currentColor" stroke-width="1"/>
+
+  <!-- Upload arrow -->
+  <path d="M13,10 L13,6 L11.5,6 L14,3 L16.5,6 L15,6 L15,10 Z"
+        fill="currentColor" transform="translate(-1.5, 0) scale(0.7)" opacity="0.9"/>
+
+  <!-- Download arrow -->
+  <path d="M13,6 L13,10 L11.5,10 L14,13 L16.5,10 L15,10 L15,6 Z"
+        fill="currentColor" transform="translate(1, 0) scale(0.7)" opacity="0.9"/>
+</svg>

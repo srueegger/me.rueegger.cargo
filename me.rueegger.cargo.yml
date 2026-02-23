@@ -1,0 +1,35 @@
+app-id: me.rueegger.cargo
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+
+command: cargo-app
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=home
+  - --filesystem=/media
+  - --filesystem=/run/media
+  - --socket=ssh-auth
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/cargo-app/cargo
+    CARGO_NET_OFFLINE: 'true'
+
+modules:
+  - name: cargo-app
+    buildsystem: meson
+    config-opts:
+      - -Dprofile=release
+    sources:
+      - type: dir
+        path: .
+      - cargo-sources.json

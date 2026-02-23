@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>me.rueegger.cargo</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-only</project_license>
+
+  <name>Cargo</name>
+  <summary>Transfer files between local and remote locations</summary>
+
+  <developer id="me.rueegger">
+    <name>Samuel Rüegger</name>
+  </developer>
+
+  <description>
+    <p>
+      Cargo is a dual-pane file transfer application for GNOME.
+      Connect to FTP, FTPS, and SFTP servers and transfer files
+      with a visual progress queue. Manage your server connections
+      with the built-in site manager.
+    </p>
+    <p>
+      Features include synchronized directory navigation, a pausable
+      transfer queue with individual controls, and SSH key authentication.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">me.rueegger.cargo.desktop</launchable>
+
+  <url type="homepage">https://github.com/srueegger/cargo</url>
+  <url type="bugtracker">https://github.com/srueegger/cargo/issues</url>
+  <url type="vcs-browser">https://github.com/srueegger/cargo</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#99c1f1</color>
+    <color type="primary" scheme_preference="dark">#1a5fb4</color>
+  </branding>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.1.0" date="2026-02-23">
+      <description>
+        <p>Initial release with FTP, FTPS, and SFTP support.</p>
+      </description>
+    </release>
+  </releases>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+</component>

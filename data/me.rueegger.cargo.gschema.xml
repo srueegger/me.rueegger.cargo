@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="cargo-app">
+  <schema id="me.rueegger.cargo" path="/me/rueegger/cargo/">
+
+    <key name="window-width" type="i">
+      <default>1200</default>
+      <summary>Default window width</summary>
+    </key>
+
+    <key name="window-height" type="i">
+      <default>700</default>
+      <summary>Default window height</summary>
+    </key>
+
+    <key name="is-maximized" type="b">
+      <default>false</default>
+      <summary>Whether the window is maximized</summary>
+    </key>
+
+    <key name="show-hidden-files" type="b">
+      <default>false</default>
+      <summary>Whether to show hidden files</summary>
+    </key>
+
+    <key name="sync-navigation" type="b">
+      <default>false</default>
+      <summary>Whether to synchronize directory navigation between panels</summary>
+    </key>
+
+  </schema>
+</schemalist>
