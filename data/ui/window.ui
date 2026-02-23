@@ -38,18 +38,22 @@
 
         <!-- Main Content: Dual-pane file browser -->
         <property name="content">
-          <object class="GtkPaned" id="paned">
-            <property name="orientation">horizontal</property>
-            <property name="shrink-start-child">false</property>
-            <property name="shrink-end-child">false</property>
-            <property name="resize-start-child">true</property>
-            <property name="resize-end-child">true</property>
+          <object class="AdwToastOverlay" id="toast_overlay">
+            <property name="child">
+              <object class="GtkPaned" id="paned">
+                <property name="orientation">horizontal</property>
+                <property name="shrink-start-child">false</property>
+                <property name="shrink-end-child">false</property>
+                <property name="resize-start-child">true</property>
+                <property name="resize-end-child">true</property>
 
-            <property name="start-child">
-              <object class="CargoFilePanel" id="left_panel"/>
-            </property>
-            <property name="end-child">
-              <object class="CargoFilePanel" id="right_panel"/>
+                <property name="start-child">
+                  <object class="CargoFilePanel" id="left_panel"/>
+                </property>
+                <property name="end-child">
+                  <object class="CargoFilePanel" id="right_panel"/>
+                </property>
+              </object>
             </property>
           </object>
         </property>

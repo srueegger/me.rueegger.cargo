@@ -182,6 +182,12 @@
                                 <property name="visible">false</property>
                               </object>
                             </child>
+
+                            <child>
+                              <object class="AdwPasswordEntryRow" id="password_entry">
+                                <property name="title" translatable="yes">Password</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
 

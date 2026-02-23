@@ -43,6 +43,8 @@ mod imp {
         pub auth_method_combo: TemplateChild<adw::ComboRow>,
         #[template_child]
         pub key_file_entry: TemplateChild<adw::EntryRow>,
+        #[template_child]
+        pub password_entry: TemplateChild<adw::PasswordEntryRow>,
 
         // State containers
         #[template_child]
@@ -54,6 +56,7 @@ mod imp {
         pub store: RefCell<SiteStore>,
         pub selected_id: RefCell<Option<String>>,
         pub updating_form: Cell<bool>,
+        pub connect_request: RefCell<Option<(SiteProfile, Option<String>)>>,
     }
 
     #[glib::object_subclass]
@@ -264,6 +267,9 @@ impl CargoSiteManagerDialog {
         imp.auth_method_combo.set_selected(auth_index);
         imp.key_file_entry.set_text(&key_path);
         imp.key_file_entry.set_visible(auth_index == 1);
+        // Password: visible for Password (0) and KeyFile passphrase (1), clear on site switch
+        imp.password_entry.set_text("");
+        imp.password_entry.set_visible(auth_index != 2);
 
         imp.updating_form.set(false);
     }
@@ -378,8 +384,27 @@ impl CargoSiteManagerDialog {
     }
 
     fn on_connect(&self) {
-        // Placeholder for Branch 5 — actual connection logic will go here.
+        let imp = self.imp();
+        let selected_id = imp.selected_id.borrow().clone();
+        let Some(id) = selected_id else { return };
+
+        let store = imp.store.borrow();
+        let Some(site) = store.find(&id) else { return };
+
+        let profile = site.clone();
+        let password = {
+            let text = imp.password_entry.text().to_string();
+            if text.is_empty() { None } else { Some(text) }
+        };
+
+        drop(store);
+        *imp.connect_request.borrow_mut() = Some((profile, password));
         self.close();
+    }
+
+    /// Take the connect request (profile + password), consumed by the window.
+    pub fn take_connect_request(&self) -> Option<(SiteProfile, Option<String>)> {
+        self.imp().connect_request.borrow_mut().take()
     }
 
     fn on_protocol_changed(&self) {
@@ -396,7 +421,10 @@ impl CargoSiteManagerDialog {
     }
 
     fn on_auth_method_changed(&self) {
-        let show_key = self.imp().auth_method_combo.selected() == 1;
-        self.imp().key_file_entry.set_visible(show_key);
+        let selected = self.imp().auth_method_combo.selected();
+        // Key file path: visible only for KeyFile (1)
+        self.imp().key_file_entry.set_visible(selected == 1);
+        // Password: visible for Password (0) and KeyFile passphrase (1)
+        self.imp().password_entry.set_visible(selected != 2);
     }
 }

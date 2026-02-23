@@ -6,12 +6,16 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
+use std::rc::Rc;
+
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 use libadwaita as adw;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 
 use crate::config::APP_ID;
+use crate::connection::ConnectionHandle;
+use crate::site_manager::SiteProfile;
 
 mod imp {
     use super::*;
@@ -21,6 +25,8 @@ mod imp {
     pub struct CargoWindow {
         #[template_child]
         pub header_bar: TemplateChild<adw::HeaderBar>,
+        #[template_child]
+        pub toast_overlay: TemplateChild<adw::ToastOverlay>,
         #[template_child]
         pub paned: TemplateChild<gtk::Paned>,
         #[template_child]
@@ -65,7 +71,12 @@ mod imp {
     impl WidgetImpl for CargoWindow {}
     impl WindowImpl for CargoWindow {
         fn close_request(&self) -> glib::Propagation {
-            self.obj().save_window_state();
+            let obj = self.obj();
+            obj.save_window_state();
+            // Disconnect remote panel if connected
+            if obj.imp().right_panel.is_remote() {
+                obj.imp().right_panel.set_local_mode();
+            }
             glib::Propagation::Proceed
         }
     }
@@ -132,9 +143,79 @@ impl CargoWindow {
             #[weak(rename_to = window)]
             self,
             move |_| {
-                let dialog = crate::site_manager_dialog::CargoSiteManagerDialog::new();
-                dialog.present(Some(&window));
+                if window.imp().right_panel.is_remote() {
+                    // Disconnect
+                    window.imp().right_panel.set_local_mode();
+                    window.imp().connect_button.set_icon_name("network-server-symbolic");
+                    window.imp().connect_button.set_tooltip_text(Some("Site Manager"));
+                    let toast = adw::Toast::new("Disconnected");
+                    window.imp().toast_overlay.add_toast(toast);
+                } else {
+                    // Open Site Manager
+                    let dialog = crate::site_manager_dialog::CargoSiteManagerDialog::new();
+                    dialog.connect_closed(glib::clone!(
+                        #[weak]
+                        window,
+                        move |dialog| {
+                            if let Some((profile, password)) = dialog.take_connect_request() {
+                                window.initiate_connection(profile, password);
+                            }
+                        }
+                    ));
+                    dialog.present(Some(&window));
+                }
             }
         ));
+    }
+
+    fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {
+        let config = profile.to_connection_config(password);
+        let imp = self.imp();
+
+        // Show connecting state
+        if let Some(store) = imp.right_panel.imp().list_store.get() {
+            store.remove_all();
+        }
+        imp.right_panel.imp().status_label.set_label("Connecting...");
+
+        let window_weak = self.downgrade();
+
+        glib::spawn_future_local(async move {
+            match ConnectionHandle::connect(config).await {
+                Ok(handle) => {
+                    let Some(window) = window_weak.upgrade() else {
+                        return;
+                    };
+                    let conn = Rc::new(handle);
+                    window.imp().right_panel.set_remote_mode(conn);
+                    window
+                        .imp()
+                        .connect_button
+                        .set_icon_name("network-offline-symbolic");
+                    window
+                        .imp()
+                        .connect_button
+                        .set_tooltip_text(Some("Disconnect"));
+                    let toast = adw::Toast::new("Connected");
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let Some(window) = window_weak.upgrade() else {
+                        return;
+                    };
+                    window
+                        .imp()
+                        .right_panel
+                        .imp()
+                        .status_label
+                        .set_label(&format!("Connection failed: {}", e));
+                    let toast = adw::Toast::builder()
+                        .title(format!("Connection failed: {}", e))
+                        .timeout(5)
+                        .build();
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
     }
 }

@@ -8,11 +8,25 @@
 
 use std::cell::RefCell;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 use crate::config::APP_ID;
+use crate::connection::ConnectionHandle;
 use crate::file_item::FileItem;
+
+/// Panel operating mode.
+pub(crate) enum PanelMode {
+    Local,
+    Remote(Rc<ConnectionHandle>),
+}
+
+impl Default for PanelMode {
+    fn default() -> Self {
+        Self::Local
+    }
+}
 
 mod imp {
     use super::*;
@@ -41,6 +55,10 @@ mod imp {
         pub current_path: RefCell<PathBuf>,
         pub list_store: OnceCell<gio::ListStore>,
         pub settings: OnceCell<gio::Settings>,
+
+        // Remote mode state
+        pub mode: RefCell<PanelMode>,
+        pub remote_path: RefCell<String>,
     }
 
     #[glib::object_subclass]
@@ -256,9 +274,13 @@ impl FilePanel {
             self,
             move |entry| {
                 let text = entry.text();
-                let path = PathBuf::from(text.as_str());
-                if path.is_dir() {
-                    panel.navigate_to(path);
+                if panel.is_remote() {
+                    panel.navigate_to_remote(text.as_str());
+                } else {
+                    let path = PathBuf::from(text.as_str());
+                    if path.is_dir() {
+                        panel.navigate_to(path);
+                    }
                 }
             }
         ));
@@ -304,6 +326,31 @@ impl FilePanel {
         );
     }
 
+    // --- Mode switching ---
+
+    /// Switch this panel to remote mode with the given connection.
+    pub fn set_remote_mode(&self, connection: Rc<ConnectionHandle>) {
+        let initial_dir = connection.current_dir();
+        *self.imp().mode.borrow_mut() = PanelMode::Remote(connection);
+        self.navigate_to_remote(&initial_dir);
+    }
+
+    /// Switch this panel back to local mode and disconnect.
+    pub fn set_local_mode(&self) {
+        let mode = self.imp().mode.replace(PanelMode::Local);
+        if let PanelMode::Remote(conn) = mode {
+            glib::spawn_future_local(async move {
+                let _ = conn.disconnect().await;
+            });
+        }
+        self.navigate_to(glib::home_dir());
+    }
+
+    /// Check if panel is in remote mode.
+    pub fn is_remote(&self) -> bool {
+        matches!(&*self.imp().mode.borrow(), PanelMode::Remote(_))
+    }
+
     // --- Navigation ---
 
     pub fn navigate_to(&self, path: PathBuf) {
@@ -314,16 +361,45 @@ impl FilePanel {
         self.load_directory(&path);
     }
 
+    pub fn navigate_to_remote(&self, path: &str) {
+        *self.imp().remote_path.borrow_mut() = path.to_string();
+        self.imp().path_entry.set_text(path);
+        self.load_remote_directory(path);
+    }
+
     pub fn navigate_up(&self) {
-        let current = self.imp().current_path.borrow().clone();
-        if let Some(parent) = current.parent() {
-            self.navigate_to(parent.to_path_buf());
+        match &*self.imp().mode.borrow() {
+            PanelMode::Local => {
+                let current = self.imp().current_path.borrow().clone();
+                if let Some(parent) = current.parent() {
+                    self.navigate_to(parent.to_path_buf());
+                }
+            }
+            PanelMode::Remote(_) => {
+                let current = self.imp().remote_path.borrow().clone();
+                if current != "/" {
+                    let parent = current
+                        .trim_end_matches('/')
+                        .rsplit_once('/')
+                        .map(|(p, _)| if p.is_empty() { "/" } else { p })
+                        .unwrap_or("/");
+                    self.navigate_to_remote(parent);
+                }
+            }
         }
     }
 
     pub fn reload(&self) {
-        let current = self.imp().current_path.borrow().clone();
-        self.load_directory(&current);
+        match &*self.imp().mode.borrow() {
+            PanelMode::Local => {
+                let current = self.imp().current_path.borrow().clone();
+                self.load_directory(&current);
+            }
+            PanelMode::Remote(_) => {
+                let current = self.imp().remote_path.borrow().clone();
+                self.load_remote_directory(&current);
+            }
+        }
     }
 
     pub fn current_path(&self) -> PathBuf {
@@ -335,13 +411,26 @@ impl FilePanel {
         if let Some(obj) = model.item(position) {
             let item: FileItem = obj.downcast().unwrap();
             if item.is_dir() {
-                let new_path = self.imp().current_path.borrow().join(item.name());
-                self.navigate_to(new_path);
+                match &*self.imp().mode.borrow() {
+                    PanelMode::Local => {
+                        let new_path = self.imp().current_path.borrow().join(item.name());
+                        self.navigate_to(new_path);
+                    }
+                    PanelMode::Remote(_) => {
+                        let current = self.imp().remote_path.borrow().clone();
+                        let new_path = if current.ends_with('/') {
+                            format!("{}{}", current, item.name())
+                        } else {
+                            format!("{}/{}", current, item.name())
+                        };
+                        self.navigate_to_remote(&new_path);
+                    }
+                }
             }
         }
     }
 
-    // --- Directory reading ---
+    // --- Directory reading (local) ---
 
     fn load_directory(&self, path: &std::path::Path) {
         let imp = self.imp();
@@ -393,6 +482,68 @@ impl FilePanel {
                 imp.status_label.set_label(&format!("Error: {}", e));
             }
         }
+    }
+
+    // --- Directory reading (remote) ---
+
+    fn load_remote_directory(&self, path: &str) {
+        let imp = self.imp();
+        let store = imp.list_store.get().unwrap();
+        store.remove_all();
+        imp.status_label.set_label("Loading...");
+
+        let connection = match &*imp.mode.borrow() {
+            PanelMode::Remote(conn) => conn.clone(),
+            PanelMode::Local => return,
+        };
+
+        let show_hidden = imp.settings.get().unwrap().boolean("show-hidden-files");
+        let path = path.to_string();
+        let panel_weak = self.downgrade();
+
+        glib::spawn_future_local(async move {
+            let result = connection.list_dir(&path).await;
+
+            let Some(panel) = panel_weak.upgrade() else {
+                return;
+            };
+            let store = panel.imp().list_store.get().unwrap();
+
+            match result {
+                Ok(entries) => {
+                    let items: Vec<FileItem> = entries
+                        .into_iter()
+                        .filter(|e| show_hidden || !e.name.starts_with('.'))
+                        .map(|e| {
+                            FileItem::new(
+                                &e.name,
+                                e.is_dir,
+                                e.size,
+                                e.modified.unwrap_or(0),
+                                e.permissions.as_deref().unwrap_or(""),
+                            )
+                        })
+                        .collect();
+
+                    let objects: Vec<glib::Object> = items
+                        .into_iter()
+                        .map(|i| i.upcast::<glib::Object>())
+                        .collect();
+                    store.splice(0, 0, &objects);
+
+                    panel
+                        .imp()
+                        .status_label
+                        .set_label(&format!("{} items", store.n_items()));
+                }
+                Err(e) => {
+                    panel
+                        .imp()
+                        .status_label
+                        .set_label(&format!("Error: {}", e));
+                }
+            }
+        });
     }
 
     fn format_permissions(metadata: &Option<std::fs::Metadata>) -> String {
