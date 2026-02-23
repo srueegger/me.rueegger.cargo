@@ -3,6 +3,7 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-changed=data/cargo-app.gresource.xml");
     println!("cargo:rerun-if-changed=data/ui/window.ui");
+    println!("cargo:rerun-if-changed=data/ui/file_panel.ui");
 
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let target = format!("{}/cargo-app.gresource", out_dir);

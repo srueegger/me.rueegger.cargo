@@ -21,7 +21,13 @@ mod imp {
         #[template_child]
         pub header_bar: TemplateChild<adw::HeaderBar>,
         #[template_child]
-        pub status_page: TemplateChild<adw::StatusPage>,
+        pub paned: TemplateChild<gtk::Paned>,
+        #[template_child]
+        pub left_panel: TemplateChild<crate::file_panel::FilePanel>,
+        #[template_child]
+        pub right_panel: TemplateChild<crate::file_panel::FilePanel>,
+        #[template_child]
+        pub hidden_files_button: TemplateChild<gtk::ToggleButton>,
     }
 
     #[glib::object_subclass]
@@ -31,6 +37,8 @@ mod imp {
         type ParentType = adw::ApplicationWindow;
 
         fn class_init(klass: &mut Self::Class) {
+            crate::file_item::FileItem::ensure_type();
+            crate::file_panel::FilePanel::ensure_type();
             klass.bind_template();
         }
 
@@ -44,6 +52,8 @@ mod imp {
             self.parent_constructed();
             let obj = self.obj();
             obj.load_window_state();
+            obj.setup_hidden_files_toggle();
+            obj.setup_paned_position();
         }
     }
 
@@ -99,5 +109,16 @@ impl CargoWindow {
         if is_maximized {
             self.maximize();
         }
+    }
+
+    fn setup_hidden_files_toggle(&self) {
+        let settings = self.settings();
+        settings
+            .bind("show-hidden-files", &*self.imp().hidden_files_button, "active")
+            .build();
+    }
+
+    fn setup_paned_position(&self) {
+        self.imp().paned.set_position(600);
     }
 }

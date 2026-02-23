@@ -19,6 +19,12 @@
                 <property name="tooltip-text" translatable="yes">Site Manager</property>
               </object>
             </child>
+            <child type="start">
+              <object class="GtkToggleButton" id="hidden_files_button">
+                <property name="icon-name">view-reveal-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Show Hidden Files</property>
+              </object>
+            </child>
             <child type="end">
               <object class="GtkMenuButton" id="menu_button">
                 <property name="icon-name">open-menu-symbolic</property>
@@ -30,12 +36,21 @@
           </object>
         </child>
 
-        <!-- Main Content: Status Page (placeholder for dual-pane) -->
+        <!-- Main Content: Dual-pane file browser -->
         <property name="content">
-          <object class="AdwStatusPage" id="status_page">
-            <property name="icon-name">me.rueegger.cargo</property>
-            <property name="title" translatable="yes">Cargo</property>
-            <property name="description" translatable="yes">Connect to a server to start transferring files</property>
+          <object class="GtkPaned" id="paned">
+            <property name="orientation">horizontal</property>
+            <property name="shrink-start-child">false</property>
+            <property name="shrink-end-child">false</property>
+            <property name="resize-start-child">true</property>
+            <property name="resize-end-child">true</property>
+
+            <property name="start-child">
+              <object class="CargoFilePanel" id="left_panel"/>
+            </property>
+            <property name="end-child">
+              <object class="CargoFilePanel" id="right_panel"/>
+            </property>
           </object>
         </property>
       </object>

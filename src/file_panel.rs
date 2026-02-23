@@ -1,0 +1,413 @@
+// Cargo - A dual-pane file transfer application for GNOME
+// Copyright (C) 2026 Samuel Rüegger
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+
+use std::cell::RefCell;
+use std::path::PathBuf;
+
+use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+
+use crate::config::APP_ID;
+use crate::file_item::FileItem;
+
+mod imp {
+    use super::*;
+    use std::cell::OnceCell;
+
+    #[derive(CompositeTemplate, Default)]
+    #[template(resource = "/me/rueegger/cargo/ui/file_panel.ui")]
+    pub struct FilePanel {
+        #[template_child]
+        pub path_entry: TemplateChild<gtk::Entry>,
+        #[template_child]
+        pub up_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub column_view: TemplateChild<gtk::ColumnView>,
+        #[template_child]
+        pub name_column: TemplateChild<gtk::ColumnViewColumn>,
+        #[template_child]
+        pub size_column: TemplateChild<gtk::ColumnViewColumn>,
+        #[template_child]
+        pub modified_column: TemplateChild<gtk::ColumnViewColumn>,
+        #[template_child]
+        pub permissions_column: TemplateChild<gtk::ColumnViewColumn>,
+        #[template_child]
+        pub status_label: TemplateChild<gtk::Label>,
+
+        pub current_path: RefCell<PathBuf>,
+        pub list_store: OnceCell<gio::ListStore>,
+        pub settings: OnceCell<gio::Settings>,
+    }
+
+    #[glib::object_subclass]
+    impl ObjectSubclass for FilePanel {
+        const NAME: &'static str = "CargoFilePanel";
+        type Type = super::FilePanel;
+        type ParentType = gtk::Box;
+
+        fn class_init(klass: &mut Self::Class) {
+            FileItem::ensure_type();
+            klass.bind_template();
+        }
+
+        fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+            obj.init_template();
+        }
+    }
+
+    impl ObjectImpl for FilePanel {
+        fn constructed(&self) {
+            self.parent_constructed();
+
+            self.list_store
+                .set(gio::ListStore::new::<FileItem>())
+                .unwrap();
+            self.settings.set(gio::Settings::new(APP_ID)).unwrap();
+            *self.current_path.borrow_mut() = glib::home_dir();
+
+            let obj = self.obj();
+            obj.setup_column_factories();
+            obj.setup_sorting();
+            obj.setup_selection_model();
+            obj.setup_signals();
+            obj.navigate_to(glib::home_dir());
+        }
+    }
+
+    impl WidgetImpl for FilePanel {}
+    impl BoxImpl for FilePanel {}
+}
+
+glib::wrapper! {
+    pub struct FilePanel(ObjectSubclass<imp::FilePanel>)
+        @extends gtk::Box, gtk::Widget,
+        @implements gtk::Accessible, gtk::Buildable,
+                    gtk::ConstraintTarget, gtk::Orientable;
+}
+
+impl FilePanel {
+    // --- Setup ---
+
+    fn setup_column_factories(&self) {
+        let imp = self.imp();
+
+        // Name column: icon + label
+        let name_factory = gtk::SignalListItemFactory::new();
+        name_factory.connect_setup(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let bx = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            bx.set_margin_start(4);
+            let icon = gtk::Image::new();
+            let label = gtk::Label::new(None);
+            label.set_xalign(0.0);
+            label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+            label.set_hexpand(true);
+            bx.append(&icon);
+            bx.append(&label);
+            list_item.set_child(Some(&bx));
+        });
+        name_factory.connect_bind(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let item: FileItem = list_item.item().and_downcast().unwrap();
+            let bx: gtk::Box = list_item.child().and_downcast().unwrap();
+            let icon = bx.first_child().and_downcast::<gtk::Image>().unwrap();
+            let label = icon
+                .next_sibling()
+                .and_downcast::<gtk::Label>()
+                .unwrap();
+            icon.set_icon_name(Some(&item.icon_name()));
+            label.set_label(&item.name());
+            if item.is_dir() {
+                label.add_css_class("accent");
+            } else {
+                label.remove_css_class("accent");
+            }
+        });
+        name_factory.connect_unbind(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            if let Some(bx) = list_item.child().and_downcast::<gtk::Box>() {
+                if let Some(label) = bx
+                    .first_child()
+                    .and_then(|c| c.next_sibling())
+                    .and_downcast::<gtk::Label>()
+                {
+                    label.remove_css_class("accent");
+                }
+            }
+        });
+        imp.name_column.set_factory(Some(&name_factory));
+
+        // Size column
+        Self::setup_label_column(&imp.size_column, |item: &FileItem| {
+            item.display_size()
+        });
+
+        // Modified column
+        Self::setup_label_column(&imp.modified_column, |item: &FileItem| {
+            item.display_modified()
+        });
+
+        // Permissions column
+        Self::setup_label_column(&imp.permissions_column, |item: &FileItem| {
+            item.permissions()
+        });
+    }
+
+    fn setup_label_column(
+        column: &gtk::ColumnViewColumn,
+        get_text: fn(&FileItem) -> String,
+    ) {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let label = gtk::Label::new(None);
+            label.set_xalign(0.0);
+            label.set_margin_start(4);
+            label.set_margin_end(4);
+            list_item.set_child(Some(&label));
+        });
+        let get_text_fn = get_text;
+        factory.connect_bind(move |_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let item: FileItem = list_item.item().and_downcast().unwrap();
+            let label: gtk::Label = list_item.child().and_downcast().unwrap();
+            label.set_label(&get_text_fn(&item));
+        });
+        column.set_factory(Some(&factory));
+    }
+
+    fn setup_sorting(&self) {
+        let imp = self.imp();
+
+        // Name: directories first, then case-insensitive alphabetical
+        let name_sorter = gtk::CustomSorter::new(move |a, b| {
+            let a = a.downcast_ref::<FileItem>().unwrap();
+            let b = b.downcast_ref::<FileItem>().unwrap();
+            match (a.is_dir(), b.is_dir()) {
+                (true, false) => gtk::Ordering::Smaller,
+                (false, true) => gtk::Ordering::Larger,
+                _ => a
+                    .name()
+                    .to_lowercase()
+                    .cmp(&b.name().to_lowercase())
+                    .into(),
+            }
+        });
+        imp.name_column.set_sorter(Some(&name_sorter));
+
+        // Size: numeric
+        let size_sorter = gtk::CustomSorter::new(move |a, b| {
+            let a = a.downcast_ref::<FileItem>().unwrap();
+            let b = b.downcast_ref::<FileItem>().unwrap();
+            a.size().cmp(&b.size()).into()
+        });
+        imp.size_column.set_sorter(Some(&size_sorter));
+
+        // Modified: numeric timestamp
+        let modified_sorter = gtk::CustomSorter::new(move |a, b| {
+            let a = a.downcast_ref::<FileItem>().unwrap();
+            let b = b.downcast_ref::<FileItem>().unwrap();
+            a.modified().cmp(&b.modified()).into()
+        });
+        imp.modified_column.set_sorter(Some(&modified_sorter));
+
+        // Permissions: string
+        let perms_sorter = gtk::CustomSorter::new(move |a, b| {
+            let a = a.downcast_ref::<FileItem>().unwrap();
+            let b = b.downcast_ref::<FileItem>().unwrap();
+            a.permissions().cmp(&b.permissions()).into()
+        });
+        imp.permissions_column.set_sorter(Some(&perms_sorter));
+    }
+
+    fn setup_selection_model(&self) {
+        let imp = self.imp();
+        let store = imp.list_store.get().unwrap().clone();
+
+        let sorter = imp.column_view.sorter();
+        let sort_model = gtk::SortListModel::new(Some(store), sorter);
+        let selection = gtk::MultiSelection::new(Some(sort_model));
+        imp.column_view.set_model(Some(&selection));
+
+        // Default sort: Name ascending
+        imp.column_view
+            .sort_by_column(Some(&*imp.name_column), gtk::SortType::Ascending);
+    }
+
+    fn setup_signals(&self) {
+        let imp = self.imp();
+
+        // Double-click / Enter on row → navigate into directory
+        imp.column_view.connect_activate(glib::clone!(
+            #[weak(rename_to = panel)]
+            self,
+            move |_view, position| {
+                panel.activate_row(position);
+            }
+        ));
+
+        // Path entry Enter → navigate to typed path
+        imp.path_entry.connect_activate(glib::clone!(
+            #[weak(rename_to = panel)]
+            self,
+            move |entry| {
+                let text = entry.text();
+                let path = PathBuf::from(text.as_str());
+                if path.is_dir() {
+                    panel.navigate_to(path);
+                }
+            }
+        ));
+
+        // Up button
+        imp.up_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = panel)]
+            self,
+            move |_| {
+                panel.navigate_up();
+            }
+        ));
+
+        // Keyboard: Backspace → go up
+        let key_controller = gtk::EventControllerKey::new();
+        key_controller.connect_key_pressed(glib::clone!(
+            #[weak(rename_to = panel)]
+            self,
+            #[upgrade_or]
+            glib::Propagation::Proceed,
+            move |_, key, _, _| {
+                if key == gtk::gdk::Key::BackSpace {
+                    panel.navigate_up();
+                    glib::Propagation::Stop
+                } else {
+                    glib::Propagation::Proceed
+                }
+            }
+        ));
+        self.add_controller(key_controller);
+
+        // GSettings: show-hidden-files changed → reload
+        let settings = imp.settings.get().unwrap();
+        settings.connect_changed(
+            Some("show-hidden-files"),
+            glib::clone!(
+                #[weak(rename_to = panel)]
+                self,
+                move |_, _| {
+                    panel.reload();
+                }
+            ),
+        );
+    }
+
+    // --- Navigation ---
+
+    pub fn navigate_to(&self, path: PathBuf) {
+        *self.imp().current_path.borrow_mut() = path.clone();
+        self.imp()
+            .path_entry
+            .set_text(&path.display().to_string());
+        self.load_directory(&path);
+    }
+
+    pub fn navigate_up(&self) {
+        let current = self.imp().current_path.borrow().clone();
+        if let Some(parent) = current.parent() {
+            self.navigate_to(parent.to_path_buf());
+        }
+    }
+
+    pub fn reload(&self) {
+        let current = self.imp().current_path.borrow().clone();
+        self.load_directory(&current);
+    }
+
+    pub fn current_path(&self) -> PathBuf {
+        self.imp().current_path.borrow().clone()
+    }
+
+    fn activate_row(&self, position: u32) {
+        let model = self.imp().column_view.model().unwrap();
+        if let Some(obj) = model.item(position) {
+            let item: FileItem = obj.downcast().unwrap();
+            if item.is_dir() {
+                let new_path = self.imp().current_path.borrow().join(item.name());
+                self.navigate_to(new_path);
+            }
+        }
+    }
+
+    // --- Directory reading ---
+
+    fn load_directory(&self, path: &std::path::Path) {
+        let imp = self.imp();
+        let store = imp.list_store.get().unwrap();
+        store.remove_all();
+
+        let show_hidden = imp.settings.get().unwrap().boolean("show-hidden-files");
+
+        match std::fs::read_dir(path) {
+            Ok(entries) => {
+                let mut items: Vec<FileItem> = Vec::new();
+
+                for entry in entries.flatten() {
+                    let file_name = entry.file_name().to_string_lossy().to_string();
+
+                    if !show_hidden && file_name.starts_with('.') {
+                        continue;
+                    }
+
+                    let metadata = entry.metadata().ok();
+                    let is_dir = metadata.as_ref().map_or(false, |m| m.is_dir());
+                    let size = metadata.as_ref().map_or(0, |m| m.len());
+                    let modified = metadata
+                        .as_ref()
+                        .and_then(|m| m.modified().ok())
+                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                        .map_or(0, |d| d.as_secs() as i64);
+                    let permissions = Self::format_permissions(&metadata);
+
+                    items.push(FileItem::new(
+                        &file_name,
+                        is_dir,
+                        size,
+                        modified,
+                        &permissions,
+                    ));
+                }
+
+                let objects: Vec<glib::Object> = items
+                    .into_iter()
+                    .map(|i| i.upcast::<glib::Object>())
+                    .collect();
+                store.splice(0, 0, &objects);
+
+                imp.status_label
+                    .set_label(&format!("{} items", store.n_items()));
+            }
+            Err(e) => {
+                imp.status_label.set_label(&format!("Error: {}", e));
+            }
+        }
+    }
+
+    fn format_permissions(metadata: &Option<std::fs::Metadata>) -> String {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            metadata
+                .as_ref()
+                .map(|m| format!("{:o}", m.permissions().mode() & 0o7777))
+                .unwrap_or_default()
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = metadata;
+            String::new()
+        }
+    }
+}

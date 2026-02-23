@@ -8,6 +8,8 @@
 
 mod application;
 mod config;
+mod file_item;
+mod file_panel;
 mod protocol;
 mod window;
 
