@@ -53,6 +53,13 @@
                 <property name="tooltip-text" translatable="yes">Show Hidden Files</property>
               </object>
             </child>
+            <child type="start">
+              <object class="GtkToggleButton" id="sync_nav_button">
+                <property name="icon-name">emblem-synchronizing-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Synchronized Browsing</property>
+                <property name="sensitive">false</property>
+              </object>
+            </child>
             <child type="end">
               <object class="GtkMenuButton" id="menu_button">
                 <property name="icon-name">open-menu-symbolic</property>

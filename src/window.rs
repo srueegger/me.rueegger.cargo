@@ -15,14 +15,14 @@ use adw::subclass::prelude::*;
 
 use crate::config::APP_ID;
 use crate::connection::ConnectionHandle;
-use crate::file_panel::PanelMode;
+use crate::file_panel::{PanelMode, SyncEvent};
 use crate::site_manager::SiteProfile;
 use crate::transfer_item::*;
 use crate::transfer_queue::TransferQueue;
 
 mod imp {
     use super::*;
-    use std::cell::OnceCell;
+    use std::cell::{Cell, OnceCell};
 
     #[derive(CompositeTemplate, Default)]
     #[template(resource = "/me/rueegger/cargo/ui/window.ui")]
@@ -51,8 +51,11 @@ mod imp {
         pub transfer_list_view: TemplateChild<gtk::ListView>,
         #[template_child]
         pub clear_transfers_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub sync_nav_button: TemplateChild<gtk::ToggleButton>,
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
+        pub syncing: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -87,6 +90,7 @@ mod imp {
             obj.setup_site_manager_button();
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
+            obj.setup_sync_navigation();
         }
     }
 
@@ -163,6 +167,7 @@ impl CargoWindow {
     fn set_transfer_buttons_sensitive(&self, sensitive: bool) {
         self.imp().upload_button.set_sensitive(sensitive);
         self.imp().download_button.set_sensitive(sensitive);
+        self.imp().sync_nav_button.set_sensitive(sensitive);
     }
 
     fn setup_site_manager_button(&self) {
@@ -422,6 +427,82 @@ impl CargoWindow {
             &imp.left_panel,
             &imp.right_panel,
         );
+    }
+
+    fn setup_sync_navigation(&self) {
+        // Bind GSettings to toggle button
+        let settings = self.settings();
+        settings
+            .bind("sync-navigation", &*self.imp().sync_nav_button, "active")
+            .build();
+
+        // Left panel navigated → sync right panel
+        let window_weak = self.downgrade();
+        self.imp()
+            .left_panel
+            .set_sync_callback(Box::new(move |event| {
+                let Some(window) = window_weak.upgrade() else {
+                    return;
+                };
+                let imp = window.imp();
+                if imp.syncing.get() || !imp.sync_nav_button.is_active() {
+                    return;
+                }
+                if !imp.right_panel.is_remote() {
+                    return;
+                }
+
+                imp.syncing.set(true);
+                match event {
+                    SyncEvent::EnterDir(name) => {
+                        let current = imp.right_panel.remote_path();
+                        let new_path = if current.ends_with('/') {
+                            format!("{}{}", current, name)
+                        } else {
+                            format!("{}/{}", current, name)
+                        };
+                        imp.right_panel.navigate_to_remote(&new_path);
+                    }
+                    SyncEvent::Up => {
+                        imp.right_panel.navigate_up();
+                    }
+                }
+                imp.syncing.set(false);
+            }));
+
+        // Right panel navigated → sync left panel
+        let window_weak = self.downgrade();
+        self.imp()
+            .right_panel
+            .set_sync_callback(Box::new(move |event| {
+                let Some(window) = window_weak.upgrade() else {
+                    return;
+                };
+                let imp = window.imp();
+                if imp.syncing.get() || !imp.sync_nav_button.is_active() {
+                    return;
+                }
+
+                imp.syncing.set(true);
+                match event {
+                    SyncEvent::EnterDir(name) => {
+                        let new_path = imp.left_panel.current_path().join(&name);
+                        if new_path.is_dir() {
+                            imp.left_panel.navigate_to(new_path);
+                        } else {
+                            let toast = adw::Toast::new(&format!(
+                                "Directory '{}' not found locally",
+                                name
+                            ));
+                            imp.toast_overlay.add_toast(toast);
+                        }
+                    }
+                    SyncEvent::Up => {
+                        imp.left_panel.navigate_up();
+                    }
+                }
+                imp.syncing.set(false);
+            }));
     }
 
     fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {

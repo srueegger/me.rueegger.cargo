@@ -22,6 +22,17 @@ pub(crate) enum PanelMode {
     Remote(Rc<ConnectionHandle>),
 }
 
+/// Events emitted when a panel navigates, used for synchronized browsing.
+pub enum SyncEvent {
+    /// User navigated into a subdirectory by name.
+    EnterDir(String),
+    /// User navigated to the parent directory.
+    Up,
+}
+
+/// Callback type for sync navigation events.
+pub type SyncCallback = Box<dyn Fn(SyncEvent)>;
+
 impl Default for PanelMode {
     fn default() -> Self {
         Self::Local
@@ -59,6 +70,9 @@ mod imp {
         // Remote mode state
         pub mode: RefCell<PanelMode>,
         pub remote_path: RefCell<String>,
+
+        // Sync navigation callback
+        pub sync_callback: RefCell<Option<super::SyncCallback>>,
     }
 
     #[glib::object_subclass]
@@ -326,6 +340,18 @@ impl FilePanel {
         );
     }
 
+    // --- Sync navigation ---
+
+    pub fn set_sync_callback(&self, cb: SyncCallback) {
+        *self.imp().sync_callback.borrow_mut() = Some(cb);
+    }
+
+    fn emit_sync(&self, event: SyncEvent) {
+        if let Some(cb) = self.imp().sync_callback.borrow().as_ref() {
+            cb(event);
+        }
+    }
+
     // --- Mode switching ---
 
     /// Switch this panel to remote mode with the given connection.
@@ -368,11 +394,14 @@ impl FilePanel {
     }
 
     pub fn navigate_up(&self) {
-        match &*self.imp().mode.borrow() {
+        let navigated = match &*self.imp().mode.borrow() {
             PanelMode::Local => {
                 let current = self.imp().current_path.borrow().clone();
                 if let Some(parent) = current.parent() {
                     self.navigate_to(parent.to_path_buf());
+                    true
+                } else {
+                    false
                 }
             }
             PanelMode::Remote(_) => {
@@ -384,8 +413,14 @@ impl FilePanel {
                         .map(|(p, _)| if p.is_empty() { "/" } else { p })
                         .unwrap_or("/");
                     self.navigate_to_remote(parent);
+                    true
+                } else {
+                    false
                 }
             }
+        };
+        if navigated {
+            self.emit_sync(SyncEvent::Up);
         }
     }
 
@@ -433,21 +468,23 @@ impl FilePanel {
         if let Some(obj) = model.item(position) {
             let item: FileItem = obj.downcast().unwrap();
             if item.is_dir() {
+                let dir_name = item.name();
                 match &*self.imp().mode.borrow() {
                     PanelMode::Local => {
-                        let new_path = self.imp().current_path.borrow().join(item.name());
+                        let new_path = self.imp().current_path.borrow().join(&dir_name);
                         self.navigate_to(new_path);
                     }
                     PanelMode::Remote(_) => {
                         let current = self.imp().remote_path.borrow().clone();
                         let new_path = if current.ends_with('/') {
-                            format!("{}{}", current, item.name())
+                            format!("{}{}", current, dir_name)
                         } else {
-                            format!("{}/{}", current, item.name())
+                            format!("{}/{}", current, dir_name)
                         };
                         self.navigate_to_remote(&new_path);
                     }
                 }
+                self.emit_sync(SyncEvent::EnterDir(dir_name));
             }
         }
     }
