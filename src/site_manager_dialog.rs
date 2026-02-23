@@ -6,7 +6,7 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
-use gtk::{glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 use libadwaita as adw;
 use adw::prelude::*;
 
@@ -42,9 +42,13 @@ mod imp {
         #[template_child]
         pub auth_method_combo: TemplateChild<adw::ComboRow>,
         #[template_child]
-        pub key_file_entry: TemplateChild<adw::EntryRow>,
+        pub key_file_row: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub key_file_browse_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub password_entry: TemplateChild<adw::PasswordEntryRow>,
+
+        pub key_file_path: RefCell<String>,
 
         // State containers
         #[template_child]
@@ -186,11 +190,11 @@ impl CargoSiteManagerDialog {
             }
         ));
 
-        self.imp().key_file_entry.connect_changed(glib::clone!(
+        self.imp().key_file_browse_button.connect_clicked(glib::clone!(
             #[weak(rename_to = dialog)]
             self,
             move |_| {
-                dialog.save_current_form();
+                dialog.on_browse_key_file();
             }
         ));
 
@@ -265,8 +269,18 @@ impl CargoSiteManagerDialog {
             AuthMethodType::Agent => (2, String::new()),
         };
         imp.auth_method_combo.set_selected(auth_index);
-        imp.key_file_entry.set_text(&key_path);
-        imp.key_file_entry.set_visible(auth_index == 1);
+        *imp.key_file_path.borrow_mut() = key_path.clone();
+        if key_path.is_empty() {
+            imp.key_file_row.set_subtitle("No file selected");
+        } else {
+            // Show just the filename
+            let display = std::path::Path::new(&key_path)
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or(key_path);
+            imp.key_file_row.set_subtitle(&display);
+        }
+        imp.key_file_row.set_visible(auth_index == 1);
         // Password: visible for Password (0) and KeyFile passphrase (1), clear on site switch
         imp.password_entry.set_text("");
         imp.password_entry.set_visible(auth_index != 2);
@@ -305,7 +319,7 @@ impl CargoSiteManagerDialog {
         site.auth_method = match imp.auth_method_combo.selected() {
             0 => AuthMethodType::Password,
             1 => AuthMethodType::KeyFile {
-                path: imp.key_file_entry.text().to_string(),
+                path: imp.key_file_path.borrow().clone(),
             },
             2 => AuthMethodType::Agent,
             _ => AuthMethodType::Password,
@@ -422,9 +436,45 @@ impl CargoSiteManagerDialog {
 
     fn on_auth_method_changed(&self) {
         let selected = self.imp().auth_method_combo.selected();
-        // Key file path: visible only for KeyFile (1)
-        self.imp().key_file_entry.set_visible(selected == 1);
+        // Key file row: visible only for KeyFile (1)
+        self.imp().key_file_row.set_visible(selected == 1);
         // Password: visible for Password (0) and KeyFile passphrase (1)
         self.imp().password_entry.set_visible(selected != 2);
+    }
+
+    fn on_browse_key_file(&self) {
+        let dialog = gtk::FileDialog::builder()
+            .title("Select SSH Key File")
+            .modal(true)
+            .build();
+
+        // Start in ~/.ssh if it exists
+        let ssh_dir = glib::home_dir().join(".ssh");
+        if ssh_dir.is_dir() {
+            dialog.set_initial_folder(Some(&gio::File::for_path(&ssh_dir)));
+        }
+
+        let widget_weak = self.downgrade();
+        dialog.open(
+            gtk::Window::NONE,
+            gio::Cancellable::NONE,
+            move |result| {
+                let Some(widget) = widget_weak.upgrade() else {
+                    return;
+                };
+                if let Ok(file) = result {
+                    if let Some(path) = file.path() {
+                        let path_str = path.display().to_string();
+                        let filename = path
+                            .file_name()
+                            .map(|f| f.to_string_lossy().to_string())
+                            .unwrap_or_else(|| path_str.clone());
+                        *widget.imp().key_file_path.borrow_mut() = path_str;
+                        widget.imp().key_file_row.set_subtitle(&filename);
+                        widget.save_current_form();
+                    }
+                }
+            },
+        );
     }
 }

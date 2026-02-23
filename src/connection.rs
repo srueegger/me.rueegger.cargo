@@ -7,12 +7,13 @@
 // (at your option) any later version.
 
 use std::cell::RefCell;
+use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex as TokioMutex;
 
-use crate::protocol::{self, ConnectionConfig, Protocol, ProtocolError, RemoteEntry};
+use crate::protocol::{self, ConnectionConfig, ProgressSender, Protocol, ProtocolError, RemoteEntry};
 
 /// Global tokio runtime shared across all connections.
 fn tokio_runtime() -> &'static Runtime {
@@ -105,6 +106,54 @@ impl ConnectionHandle {
         self.rt_handle.spawn(async move {
             let mut p = proto.lock().await;
             let _ = tx.send(p.disconnect().await).await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
+    /// Download a file from the remote server.
+    pub async fn download(
+        &self,
+        remote_path: &str,
+        local_path: &Path,
+        progress: Option<ProgressSender>,
+    ) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let remote_path = remote_path.to_string();
+        let local_path = local_path.to_path_buf();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx
+                .send(p.download(&remote_path, &local_path, progress).await)
+                .await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
+    /// Upload a file to the remote server.
+    pub async fn upload(
+        &self,
+        local_path: &Path,
+        remote_path: &str,
+        progress: Option<ProgressSender>,
+    ) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let remote_path = remote_path.to_string();
+        let local_path = local_path.to_path_buf();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx
+                .send(p.upload(&local_path, &remote_path, progress).await)
+                .await;
         });
 
         rx.recv()

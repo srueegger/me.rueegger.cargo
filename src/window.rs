@@ -15,10 +15,14 @@ use adw::subclass::prelude::*;
 
 use crate::config::APP_ID;
 use crate::connection::ConnectionHandle;
+use crate::file_panel::PanelMode;
 use crate::site_manager::SiteProfile;
+use crate::transfer_item::*;
+use crate::transfer_queue::TransferQueue;
 
 mod imp {
     use super::*;
+    use std::cell::OnceCell;
 
     #[derive(CompositeTemplate, Default)]
     #[template(resource = "/me/rueegger/cargo/ui/window.ui")]
@@ -37,6 +41,18 @@ mod imp {
         pub hidden_files_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub connect_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub upload_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub download_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub transfer_revealer: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub transfer_list_view: TemplateChild<gtk::ListView>,
+        #[template_child]
+        pub clear_transfers_button: TemplateChild<gtk::Button>,
+
+        pub transfer_queue: OnceCell<Rc<TransferQueue>>,
     }
 
     #[glib::object_subclass]
@@ -49,6 +65,7 @@ mod imp {
             crate::file_item::FileItem::ensure_type();
             crate::file_panel::FilePanel::ensure_type();
             crate::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
+            TransferItem::ensure_type();
             klass.bind_template();
         }
 
@@ -60,11 +77,16 @@ mod imp {
     impl ObjectImpl for CargoWindow {
         fn constructed(&self) {
             self.parent_constructed();
+            self.transfer_queue
+                .set(Rc::new(TransferQueue::new()))
+                .unwrap();
             let obj = self.obj();
             obj.load_window_state();
             obj.setup_hidden_files_toggle();
             obj.setup_paned_position();
             obj.setup_site_manager_button();
+            obj.setup_transfer_buttons();
+            obj.setup_transfer_queue_ui();
         }
     }
 
@@ -138,6 +160,11 @@ impl CargoWindow {
         self.imp().paned.set_position(600);
     }
 
+    fn set_transfer_buttons_sensitive(&self, sensitive: bool) {
+        self.imp().upload_button.set_sensitive(sensitive);
+        self.imp().download_button.set_sensitive(sensitive);
+    }
+
     fn setup_site_manager_button(&self) {
         self.imp().connect_button.connect_clicked(glib::clone!(
             #[weak(rename_to = window)]
@@ -148,6 +175,7 @@ impl CargoWindow {
                     window.imp().right_panel.set_local_mode();
                     window.imp().connect_button.set_icon_name("network-server-symbolic");
                     window.imp().connect_button.set_tooltip_text(Some("Site Manager"));
+                    window.set_transfer_buttons_sensitive(false);
                     let toast = adw::Toast::new("Disconnected");
                     window.imp().toast_overlay.add_toast(toast);
                 } else {
@@ -166,6 +194,234 @@ impl CargoWindow {
                 }
             }
         ));
+    }
+
+    fn setup_transfer_buttons(&self) {
+        // Upload: selected files from left (local) → right (remote)
+        self.imp().upload_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                window.on_upload_clicked();
+            }
+        ));
+
+        // Download: selected files from right (remote) → left (local)
+        self.imp().download_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                window.on_download_clicked();
+            }
+        ));
+
+        // Clear completed transfers
+        self.imp().clear_transfers_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                window.imp().transfer_queue.get().unwrap().clear_completed();
+                if !window.imp().transfer_queue.get().unwrap().has_items() {
+                    window.imp().transfer_revealer.set_reveal_child(false);
+                }
+            }
+        ));
+    }
+
+    fn setup_transfer_queue_ui(&self) {
+        let imp = self.imp();
+        let queue = imp.transfer_queue.get().unwrap();
+
+        // Set up the ListView model
+        let selection = gtk::NoSelection::new(Some(queue.store().clone()));
+        imp.transfer_list_view.set_model(Some(&selection));
+
+        // Set up the factory for transfer rows
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            row.set_margin_start(8);
+            row.set_margin_end(8);
+            row.set_margin_top(4);
+            row.set_margin_bottom(4);
+
+            let icon = gtk::Image::new();
+            row.append(&icon);
+
+            let filename_label = gtk::Label::new(None);
+            filename_label.set_xalign(0.0);
+            filename_label.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+            filename_label.set_width_chars(20);
+            row.append(&filename_label);
+
+            let progress_bar = gtk::ProgressBar::new();
+            progress_bar.set_hexpand(true);
+            progress_bar.set_valign(gtk::Align::Center);
+            row.append(&progress_bar);
+
+            let status_label = gtk::Label::new(None);
+            status_label.set_width_chars(25);
+            status_label.set_xalign(1.0);
+            status_label.add_css_class("caption");
+            status_label.add_css_class("dim-label");
+            row.append(&status_label);
+
+            list_item.set_child(Some(&row));
+        });
+
+        factory.connect_bind(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let item: TransferItem = list_item.item().and_downcast().unwrap();
+            let row: gtk::Box = list_item.child().and_downcast().unwrap();
+
+            let icon = row.first_child().and_downcast::<gtk::Image>().unwrap();
+            let filename_label = icon
+                .next_sibling()
+                .and_downcast::<gtk::Label>()
+                .unwrap();
+            let progress_bar = filename_label
+                .next_sibling()
+                .and_downcast::<gtk::ProgressBar>()
+                .unwrap();
+            let status_label = progress_bar
+                .next_sibling()
+                .and_downcast::<gtk::Label>()
+                .unwrap();
+
+            icon.set_icon_name(Some(item.direction_icon()));
+            filename_label.set_label(&item.filename());
+            progress_bar.set_fraction(item.progress());
+            status_label.set_label(&item.status_label());
+
+            // Bind to property changes for live updates
+            let pb = progress_bar.clone();
+            let sl = status_label.clone();
+            let item_clone = item.clone();
+            item.connect_notify_local(Some("progress"), move |item, _| {
+                pb.set_fraction(item.progress());
+                sl.set_label(&item_clone.status_label());
+            });
+
+            let sl2 = status_label.clone();
+            item.connect_notify_local(Some("status"), move |item, _| {
+                sl2.set_label(&item.status_label());
+            });
+        });
+
+        imp.transfer_list_view.set_factory(Some(&factory));
+    }
+
+    fn get_connection(&self) -> Option<Rc<ConnectionHandle>> {
+        match &*self.imp().right_panel.imp().mode.borrow() {
+            PanelMode::Remote(conn) => Some(conn.clone()),
+            PanelMode::Local => None,
+        }
+    }
+
+    fn on_upload_clicked(&self) {
+        let Some(conn) = self.get_connection() else {
+            return;
+        };
+
+        let imp = self.imp();
+        let selected = imp.left_panel.selected_items();
+        if selected.is_empty() {
+            let toast = adw::Toast::new("No files selected for upload");
+            imp.toast_overlay.add_toast(toast);
+            return;
+        }
+
+        let local_dir = imp.left_panel.current_path();
+        let remote_dir = imp.right_panel.remote_path();
+        let mut queued = 0;
+
+        for item in &selected {
+            if item.is_dir() {
+                continue;
+            }
+            let local_path = local_dir.join(item.name());
+            let remote_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, item.name())
+            } else {
+                format!("{}/{}", remote_dir, item.name())
+            };
+
+            let transfer = TransferItem::new_upload(
+                &item.name(),
+                &local_path.display().to_string(),
+                &remote_path,
+            );
+            imp.transfer_queue.get().unwrap().enqueue(transfer);
+            queued += 1;
+        }
+
+        if queued == 0 {
+            let toast = adw::Toast::new("No files to upload (directories are skipped)");
+            imp.toast_overlay.add_toast(toast);
+            return;
+        }
+
+        imp.transfer_revealer.set_reveal_child(true);
+        TransferQueue::start_processing(
+            imp.transfer_queue.get().unwrap(),
+            &conn,
+            &imp.left_panel,
+            &imp.right_panel,
+        );
+    }
+
+    fn on_download_clicked(&self) {
+        let Some(conn) = self.get_connection() else {
+            return;
+        };
+
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.is_empty() {
+            let toast = adw::Toast::new("No files selected for download");
+            imp.toast_overlay.add_toast(toast);
+            return;
+        }
+
+        let local_dir = imp.left_panel.current_path();
+        let remote_dir = imp.right_panel.remote_path();
+        let mut queued = 0;
+
+        for item in &selected {
+            if item.is_dir() {
+                continue;
+            }
+            let local_path = local_dir.join(item.name());
+            let remote_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, item.name())
+            } else {
+                format!("{}/{}", remote_dir, item.name())
+            };
+
+            let transfer = TransferItem::new_download(
+                &item.name(),
+                &local_path.display().to_string(),
+                &remote_path,
+            );
+            imp.transfer_queue.get().unwrap().enqueue(transfer);
+            queued += 1;
+        }
+
+        if queued == 0 {
+            let toast = adw::Toast::new("No files to download (directories are skipped)");
+            imp.toast_overlay.add_toast(toast);
+            return;
+        }
+
+        imp.transfer_revealer.set_reveal_child(true);
+        TransferQueue::start_processing(
+            imp.transfer_queue.get().unwrap(),
+            &conn,
+            &imp.left_panel,
+            &imp.right_panel,
+        );
     }
 
     fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {
@@ -196,6 +452,7 @@ impl CargoWindow {
                         .imp()
                         .connect_button
                         .set_tooltip_text(Some("Disconnect"));
+                    window.set_transfer_buttons_sensitive(true);
                     let toast = adw::Toast::new("Connected");
                     window.imp().toast_overlay.add_toast(toast);
                 }

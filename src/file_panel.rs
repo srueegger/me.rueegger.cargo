@@ -406,6 +406,28 @@ impl FilePanel {
         self.imp().current_path.borrow().clone()
     }
 
+    pub fn remote_path(&self) -> String {
+        self.imp().remote_path.borrow().clone()
+    }
+
+    /// Returns all currently selected FileItems.
+    pub fn selected_items(&self) -> Vec<FileItem> {
+        let model = self.imp().column_view.model().unwrap();
+        let selection = model.downcast_ref::<gtk::MultiSelection>().unwrap();
+        let mut items = Vec::new();
+        let n = selection.n_items();
+        for i in 0..n {
+            if selection.is_selected(i) {
+                if let Some(obj) = selection.item(i) {
+                    if let Ok(item) = obj.downcast::<FileItem>() {
+                        items.push(item);
+                    }
+                }
+            }
+        }
+        items
+    }
+
     fn activate_row(&self, position: u32) {
         let model = self.imp().column_view.model().unwrap();
         if let Some(obj) = model.item(position) {

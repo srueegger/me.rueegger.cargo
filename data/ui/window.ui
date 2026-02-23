@@ -20,6 +20,34 @@
               </object>
             </child>
             <child type="start">
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="margin-start">4</property>
+                <property name="margin-end">4</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkButton" id="upload_button">
+                <property name="icon-name">go-up-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Upload selected files</property>
+                <property name="sensitive">false</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkButton" id="download_button">
+                <property name="icon-name">go-down-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Download selected files</property>
+                <property name="sensitive">false</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="margin-start">4</property>
+                <property name="margin-end">4</property>
+              </object>
+            </child>
+            <child type="start">
               <object class="GtkToggleButton" id="hidden_files_button">
                 <property name="icon-name">view-reveal-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Show Hidden Files</property>
@@ -36,23 +64,98 @@
           </object>
         </child>
 
-        <!-- Main Content: Dual-pane file browser -->
+        <!-- Main Content -->
         <property name="content">
           <object class="AdwToastOverlay" id="toast_overlay">
             <property name="child">
-              <object class="GtkPaned" id="paned">
-                <property name="orientation">horizontal</property>
-                <property name="shrink-start-child">false</property>
-                <property name="shrink-end-child">false</property>
-                <property name="resize-start-child">true</property>
-                <property name="resize-end-child">true</property>
+              <object class="GtkBox" id="main_vbox">
+                <property name="orientation">vertical</property>
 
-                <property name="start-child">
-                  <object class="CargoFilePanel" id="left_panel"/>
-                </property>
-                <property name="end-child">
-                  <object class="CargoFilePanel" id="right_panel"/>
-                </property>
+                <!-- Dual-pane file browser -->
+                <child>
+                  <object class="GtkPaned" id="paned">
+                    <property name="orientation">horizontal</property>
+                    <property name="shrink-start-child">false</property>
+                    <property name="shrink-end-child">false</property>
+                    <property name="resize-start-child">true</property>
+                    <property name="resize-end-child">true</property>
+                    <property name="vexpand">true</property>
+
+                    <property name="start-child">
+                      <object class="CargoFilePanel" id="left_panel"/>
+                    </property>
+                    <property name="end-child">
+                      <object class="CargoFilePanel" id="right_panel"/>
+                    </property>
+                  </object>
+                </child>
+
+                <!-- Transfer queue -->
+                <child>
+                  <object class="GtkRevealer" id="transfer_revealer">
+                    <property name="reveal-child">false</property>
+                    <property name="transition-type">slide-up</property>
+
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+
+                        <!-- Queue header -->
+                        <child>
+                          <object class="GtkSeparator"/>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="margin-start">8</property>
+                            <property name="margin-end">8</property>
+                            <property name="margin-top">4</property>
+                            <property name="margin-bottom">4</property>
+
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="label" translatable="yes">Transfers</property>
+                                <property name="hexpand">true</property>
+                                <property name="xalign">0</property>
+                                <style>
+                                  <class name="heading"/>
+                                </style>
+                              </object>
+                            </child>
+
+                            <child>
+                              <object class="GtkButton" id="clear_transfers_button">
+                                <property name="icon-name">edit-clear-all-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Clear completed transfers</property>
+                                <style>
+                                  <class name="flat"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Queue list -->
+                        <child>
+                          <object class="GtkScrolledWindow">
+                            <property name="max-content-height">150</property>
+                            <property name="propagate-natural-height">true</property>
+                            <property name="hscrollbar-policy">never</property>
+
+                            <child>
+                              <object class="GtkListView" id="transfer_list_view">
+                                <style>
+                                  <class name="rich-list"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
               </object>
             </property>
           </object>

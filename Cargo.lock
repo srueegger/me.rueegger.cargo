@@ -290,9 +290,12 @@ dependencies = [
  "russh",
  "russh-keys",
  "russh-sftp",
+ "serde",
+ "serde_json",
  "suppaftp",
  "thiserror 2.0.18",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
