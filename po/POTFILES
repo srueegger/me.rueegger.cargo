@@ -2,3 +2,4 @@ data/me.rueegger.cargo.desktop.in
 data/me.rueegger.cargo.metainfo.xml.in
 data/ui/window.ui
 data/ui/file_panel.ui
+data/ui/site_manager_dialog.ui

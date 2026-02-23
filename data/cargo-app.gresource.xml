@@ -3,5 +3,6 @@
   <gresource prefix="/me/rueegger/cargo">
     <file>ui/window.ui</file>
     <file>ui/file_panel.ui</file>
+    <file>ui/site_manager_dialog.ui</file>
   </gresource>
 </gresources>

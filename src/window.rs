@@ -8,6 +8,7 @@
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 use libadwaita as adw;
+use adw::prelude::*;
 use adw::subclass::prelude::*;
 
 use crate::config::APP_ID;
@@ -28,6 +29,8 @@ mod imp {
         pub right_panel: TemplateChild<crate::file_panel::FilePanel>,
         #[template_child]
         pub hidden_files_button: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub connect_button: TemplateChild<gtk::Button>,
     }
 
     #[glib::object_subclass]
@@ -39,6 +42,7 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             crate::file_item::FileItem::ensure_type();
             crate::file_panel::FilePanel::ensure_type();
+            crate::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
             klass.bind_template();
         }
 
@@ -54,6 +58,7 @@ mod imp {
             obj.load_window_state();
             obj.setup_hidden_files_toggle();
             obj.setup_paned_position();
+            obj.setup_site_manager_button();
         }
     }
 
@@ -120,5 +125,16 @@ impl CargoWindow {
 
     fn setup_paned_position(&self) {
         self.imp().paned.set_position(600);
+    }
+
+    fn setup_site_manager_button(&self) {
+        self.imp().connect_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                let dialog = crate::site_manager_dialog::CargoSiteManagerDialog::new();
+                dialog.present(Some(&window));
+            }
+        ));
     }
 }

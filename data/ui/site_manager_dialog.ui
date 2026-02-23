@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.5"/>
+
+  <template class="CargoSiteManagerDialog" parent="AdwDialog">
+    <property name="title" translatable="yes">Site Manager</property>
+    <property name="content-width">750</property>
+    <property name="content-height">500</property>
+
+    <property name="child">
+      <object class="AdwToolbarView">
+        <!-- Header Bar -->
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <property name="show-title">true</property>
+            <child type="start">
+              <object class="GtkButton" id="new_site_button">
+                <property name="icon-name">list-add-symbolic</property>
+                <property name="tooltip-text" translatable="yes">New Site</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="connect_button">
+                <property name="label" translatable="yes">Connect</property>
+                <property name="sensitive">false</property>
+                <style>
+                  <class name="suggested-action"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Content: split pane -->
+        <property name="content">
+          <object class="GtkPaned" id="split_pane">
+            <property name="orientation">horizontal</property>
+            <property name="position">220</property>
+            <property name="shrink-start-child">false</property>
+            <property name="shrink-end-child">false</property>
+
+            <!-- Left: Site List -->
+            <property name="start-child">
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">true</property>
+                <property name="hscrollbar-policy">never</property>
+                <child>
+                  <object class="GtkListBox" id="sites_list">
+                    <property name="selection-mode">single</property>
+                    <style>
+                      <class name="navigation-sidebar"/>
+                    </style>
+                    <child type="placeholder">
+                      <object class="GtkLabel">
+                        <property name="label" translatable="yes">No saved sites</property>
+                        <property name="margin-top">24</property>
+                        <property name="margin-bottom">24</property>
+                        <style>
+                          <class name="dim-label"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </property>
+
+            <!-- Right: Edit Form -->
+            <property name="end-child">
+              <object class="GtkScrolledWindow">
+                <property name="hscrollbar-policy">never</property>
+                <property name="vexpand">true</property>
+                <child>
+                  <object class="GtkBox" id="form_container">
+                    <property name="orientation">vertical</property>
+                    <property name="margin-start">12</property>
+                    <property name="margin-end">12</property>
+                    <property name="margin-top">12</property>
+                    <property name="margin-bottom">12</property>
+                    <property name="spacing">12</property>
+
+                    <!-- Empty state -->
+                    <child>
+                      <object class="AdwStatusPage" id="empty_status">
+                        <property name="icon-name">network-server-symbolic</property>
+                        <property name="title" translatable="yes">Select a Site</property>
+                        <property name="description" translatable="yes">Select a site from the list or create a new one</property>
+                      </object>
+                    </child>
+
+                    <!-- Edit form (hidden until a site is selected) -->
+                    <child>
+                      <object class="GtkBox" id="edit_form">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">12</property>
+                        <property name="visible">false</property>
+
+                        <!-- General -->
+                        <child>
+                          <object class="AdwPreferencesGroup">
+                            <property name="title" translatable="yes">General</property>
+                            <child>
+                              <object class="AdwEntryRow" id="name_entry">
+                                <property name="title" translatable="yes">Site Name</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Connection -->
+                        <child>
+                          <object class="AdwPreferencesGroup">
+                            <property name="title" translatable="yes">Connection</property>
+
+                            <child>
+                              <object class="AdwComboRow" id="protocol_combo">
+                                <property name="title" translatable="yes">Protocol</property>
+                                <property name="model">
+                                  <object class="GtkStringList">
+                                    <items>
+                                      <item>SFTP</item>
+                                      <item>FTP</item>
+                                      <item>FTPS</item>
+                                    </items>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+
+                            <child>
+                              <object class="AdwEntryRow" id="host_entry">
+                                <property name="title" translatable="yes">Host</property>
+                              </object>
+                            </child>
+
+                            <child>
+                              <object class="AdwSpinRow" id="port_spin">
+                                <property name="title" translatable="yes">Port</property>
+                                <property name="adjustment">
+                                  <object class="GtkAdjustment">
+                                    <property name="lower">1</property>
+                                    <property name="upper">65535</property>
+                                    <property name="step-increment">1</property>
+                                    <property name="value">22</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Authentication -->
+                        <child>
+                          <object class="AdwPreferencesGroup">
+                            <property name="title" translatable="yes">Authentication</property>
+
+                            <child>
+                              <object class="AdwEntryRow" id="username_entry">
+                                <property name="title" translatable="yes">Username</property>
+                              </object>
+                            </child>
+
+                            <child>
+                              <object class="AdwComboRow" id="auth_method_combo">
+                                <property name="title" translatable="yes">Authentication Method</property>
+                                <property name="model">
+                                  <object class="GtkStringList">
+                                    <items>
+                                      <item translatable="yes">Password</item>
+                                      <item translatable="yes">Key File</item>
+                                      <item translatable="yes">SSH Agent</item>
+                                    </items>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+
+                            <child>
+                              <object class="AdwEntryRow" id="key_file_entry">
+                                <property name="title" translatable="yes">Key File Path</property>
+                                <property name="visible">false</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Delete button -->
+                        <child>
+                          <object class="GtkButton" id="delete_button">
+                            <property name="label" translatable="yes">Delete Site</property>
+                            <property name="halign">start</property>
+                            <property name="margin-top">12</property>
+                            <style>
+                              <class name="destructive-action"/>
+                            </style>
+                          </object>
+                        </child>
+
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+</interface>

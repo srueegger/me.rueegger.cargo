@@ -11,6 +11,8 @@ mod config;
 mod file_item;
 mod file_panel;
 mod protocol;
+mod site_manager;
+mod site_manager_dialog;
 mod window;
 
 use gettextrs::LocaleCategory;
