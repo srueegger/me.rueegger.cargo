@@ -8,6 +8,7 @@
 
 mod application;
 mod config;
+mod protocol;
 mod window;
 
 use gettextrs::LocaleCategory;

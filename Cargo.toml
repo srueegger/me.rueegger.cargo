@@ -12,3 +12,18 @@ libadwaita = { version = "0.8", features = ["v1_6"] }
 glib = "0.21"
 gio = "0.21"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
+
+# Protocol layer
+suppaftp = { version = "8.0.2", features = ["tokio-rustls-aws-lc-rs"] }
+russh = "0.57"
+russh-keys = "0.49"
+russh-sftp = "2.1"
+
+# Async runtime
+tokio = { version = "1.49", features = ["rt-multi-thread", "fs", "io-util", "sync", "time"] }
+async-trait = "0.1"
+async-channel = "2.5"
+
+# Utilities
+thiserror = "2.0"
+log = "0.4"

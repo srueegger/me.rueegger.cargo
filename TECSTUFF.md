@@ -163,8 +163,21 @@ me.rueegger.cargo/
     ├── main.rs
     ├── config.rs
     ├── application.rs
-    └── window.rs
+    ├── window.rs
+    └── protocol/
+        ├── mod.rs          # Protocol trait + types + factory
+        ├── error.rs        # Unified error types
+        ├── ftp.rs          # FTP/FTPS via suppaftp
+        └── sftp.rs         # SFTP via russh + russh-sftp
 ```
+
+## Dependency Policy
+
+**Always use the latest stable versions of all dependencies.** When adding or updating
+a dependency, check for the newest release on crates.io and use that version. This
+ensures we get the latest bug fixes, security patches, and performance improvements.
+
+Periodically audit `Cargo.toml` and update any outdated dependencies.
 
 ## Dependencies
 
@@ -175,14 +188,12 @@ me.rueegger.cargo/
 | glib | 0.21 | GLib Rust bindings |
 | gio | 0.21 | GIO Rust bindings |
 | gettext-rs | 0.7 | Internationalization |
-
-### Planned Dependencies (upcoming branches)
-
-| Crate | Version | Purpose |
-|-------|---------|---------|
-| suppaftp | 6.x | FTP/FTPS client |
-| russh | 0.46 | SSH client (pure Rust) |
+| suppaftp | 8.0.2 | FTP/FTPS client (with tokio-rustls-aws-lc-rs) |
+| russh | 0.57 | SSH client (pure Rust) |
+| russh-keys | 0.49 | SSH key handling and agent support |
 | russh-sftp | 2.1 | SFTP over SSH |
-| tokio | 1.x | Async runtime |
-| async-channel | 2.x | Cross-thread communication |
+| tokio | 1.49 | Async runtime |
+| async-channel | 2.5 | Cross-thread communication |
 | async-trait | 0.1 | Async trait support |
+| thiserror | 2.0 | Derive macro for error types |
+| log | 0.4 | Logging facade |
