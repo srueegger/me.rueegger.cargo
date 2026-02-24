@@ -356,10 +356,13 @@ impl FilePanel {
     // --- Mode switching ---
 
     /// Switch this panel to remote mode with the given connection.
-    pub fn set_remote_mode(&self, connection: Rc<ConnectionHandle>) {
-        let initial_dir = connection.current_dir();
+    /// If `initial_path` is provided, navigate there instead of the connection default.
+    pub fn set_remote_mode(&self, connection: Rc<ConnectionHandle>, initial_path: Option<&str>) {
+        let dir = initial_path
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| connection.current_dir());
         *self.imp().mode.borrow_mut() = PanelMode::Remote(connection);
-        self.navigate_to_remote(&initial_dir);
+        self.navigate_to_remote(&dir);
     }
 
     /// Switch this panel back to local mode and disconnect.

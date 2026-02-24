@@ -529,7 +529,10 @@ impl CargoWindow {
                         return;
                     };
                     let conn = Rc::new(handle);
-                    window.imp().right_panel.set_remote_mode(conn);
+                    window.imp().right_panel.set_remote_mode(
+                        conn,
+                        remote_dir.as_deref(),
+                    );
                     window
                         .imp()
                         .connect_button
@@ -546,9 +549,6 @@ impl CargoWindow {
                         if path.is_dir() {
                             window.imp().left_panel.navigate_to(path);
                         }
-                    }
-                    if let Some(ref dir) = remote_dir {
-                        window.imp().right_panel.navigate_to_remote(dir);
                     }
                     if sync_browsing {
                         window.imp().sync_nav_button.set_active(true);
