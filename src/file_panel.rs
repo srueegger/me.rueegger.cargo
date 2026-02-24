@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use gettextrs::{gettext, ngettext};
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 use crate::config::APP_ID;
@@ -534,11 +535,16 @@ impl FilePanel {
                     .collect();
                 store.splice(0, 0, &objects);
 
-                imp.status_label
-                    .set_label(&format!("{} items", store.n_items()));
+                let n = store.n_items();
+                imp.status_label.set_label(
+                    &ngettext("%u item", "%u items", n)
+                        .replace("%u", &n.to_string()),
+                );
             }
             Err(e) => {
-                imp.status_label.set_label(&format!("Error: {}", e));
+                imp.status_label.set_label(
+                    &gettext("Error: %s").replace("%s", &e.to_string()),
+                );
             }
         }
     }
@@ -549,7 +555,7 @@ impl FilePanel {
         let imp = self.imp();
         let store = imp.list_store.get().unwrap();
         store.remove_all();
-        imp.status_label.set_label("Loading...");
+        imp.status_label.set_label(&gettext("Loading…"));
 
         let connection = match &*imp.mode.borrow() {
             PanelMode::Remote(conn) => conn.clone(),
@@ -590,16 +596,16 @@ impl FilePanel {
                         .collect();
                     store.splice(0, 0, &objects);
 
-                    panel
-                        .imp()
-                        .status_label
-                        .set_label(&format!("{} items", store.n_items()));
+                    let n = store.n_items();
+                    panel.imp().status_label.set_label(
+                        &ngettext("%u item", "%u items", n)
+                            .replace("%u", &n.to_string()),
+                    );
                 }
                 Err(e) => {
-                    panel
-                        .imp()
-                        .status_label
-                        .set_label(&format!("Error: {}", e));
+                    panel.imp().status_label.set_label(
+                        &gettext("Error: %s").replace("%s", &e.to_string()),
+                    );
                 }
             }
         });

@@ -6,6 +6,7 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
+use gettextrs::gettext;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 use libadwaita as adw;
 use adw::prelude::*;
@@ -306,7 +307,7 @@ impl CargoSiteManagerDialog {
         imp.auth_method_combo.set_selected(auth_index);
         *imp.key_file_path.borrow_mut() = key_path.clone();
         if key_path.is_empty() {
-            imp.key_file_row.set_subtitle("No file selected");
+            imp.key_file_row.set_subtitle(&gettext("No file selected"));
         } else {
             // Show just the filename
             let display = std::path::Path::new(&key_path)
@@ -324,7 +325,7 @@ impl CargoSiteManagerDialog {
         let local_dir = site.local_dir.clone().unwrap_or_default();
         *imp.local_dir_path.borrow_mut() = local_dir.clone();
         if local_dir.is_empty() {
-            imp.local_dir_row.set_subtitle("Default");
+            imp.local_dir_row.set_subtitle(&gettext("Default"));
         } else {
             imp.local_dir_row.set_subtitle(&local_dir);
         }
@@ -496,7 +497,7 @@ impl CargoSiteManagerDialog {
 
     fn on_browse_local_dir(&self) {
         let dialog = gtk::FileDialog::builder()
-            .title("Select Local Directory")
+            .title(gettext("Select Local Directory"))
             .modal(true)
             .build();
 
@@ -533,7 +534,7 @@ impl CargoSiteManagerDialog {
 
     fn on_browse_key_file(&self) {
         let dialog = gtk::FileDialog::builder()
-            .title("Select SSH Key File")
+            .title(gettext("Select SSH Key File"))
             .modal(true)
             .build();
 

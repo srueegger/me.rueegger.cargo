@@ -6,6 +6,7 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
+use gettextrs::gettext;
 use gtk::{glib, prelude::*, subclass::prelude::*};
 use std::cell::{Cell, RefCell};
 
@@ -106,7 +107,7 @@ impl TransferItem {
 
     pub fn status_label(&self) -> String {
         match self.status() {
-            STATUS_QUEUED => "Queued".to_string(),
+            STATUS_QUEUED => gettext("Queued"),
             STATUS_ACTIVE => {
                 let pct = (self.progress() * 100.0) as u32;
                 let transferred = format_size(self.bytes_transferred());
@@ -117,13 +118,13 @@ impl TransferItem {
                     format!("{}% ({})", pct, transferred)
                 }
             }
-            STATUS_COMPLETED => "Completed".to_string(),
+            STATUS_COMPLETED => gettext("Completed"),
             STATUS_FAILED => {
                 let msg = self.error_message();
                 if msg.is_empty() {
-                    "Failed".to_string()
+                    gettext("Failed")
                 } else {
-                    format!("Failed: {}", msg)
+                    gettext("Failed: %s").replace("%s", &msg)
                 }
             }
             _ => String::new(),

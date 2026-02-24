@@ -116,13 +116,30 @@ cd ~/Projects/flatpak.rueegger.dev
 
 ## i18n / Translations
 
+**Every user-visible string must be translatable.** This is a hard requirement.
+
 - Primary language: English (EN)
 - Translations: German (DE)
 - DE_AT and DE_CH fall back to `de.po` via standard gettext behavior
-- Translatable strings in UI files use `translatable="yes"`
-- Source strings use `gettext()` from `gettextrs`
 - `.po` files are in `po/`, listed in `LINGUAS`
 - `POTFILES` lists all files containing translatable strings
+
+### Rules for new code
+
+1. **UI files (`.ui`)**: Every user-visible string must have `translatable="yes"`
+2. **Rust source**: Wrap all user-visible strings with `gettext()` from `gettextrs`
+   - Simple strings: `gettext("Disconnect")`
+   - Format strings: `gettext("Error: %s").replace("%s", &value)` (use `%s` placeholder)
+   - Plurals: `ngettext("%u item", "%u items", n).replace("%u", &n.to_string())`
+3. **Desktop/metainfo files**: Handled automatically by `i18n.merge_file()` in meson
+4. **POTFILES**: Add any new source file that contains `gettext()` calls
+5. **Both `.po` files**: Add `msgid`/`msgstr` entries for every new string in `de.po` and `en.po`
+
+### What NOT to translate
+
+- Log messages (`log::error!`, `log::warn!`, etc.)
+- Technical identifiers (icon names, CSS classes, GSettings keys)
+- Library names in credits (proper nouns)
 
 ## Git Workflow
 
@@ -151,7 +168,9 @@ me.rueegger.cargo/
 │   │   ├── me.rueegger.cargo.svg
 │   │   └── me.rueegger.cargo-symbolic.svg
 │   └── ui/
-│       └── window.ui
+│       ├── window.ui
+│       ├── file_panel.ui
+│       └── site_manager_dialog.ui
 ├── po/
 │   ├── meson.build
 │   ├── POTFILES
