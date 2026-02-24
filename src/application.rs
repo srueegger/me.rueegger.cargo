@@ -95,6 +95,17 @@ impl CargoApplication {
             .translator_credits(gettext("translator-credits"))
             .build();
 
+        about.add_credit_section(
+            Some(&gettext("Libraries")),
+            &[
+                "GTK 4 https://gtk.org",
+                "Libadwaita https://gnome.pages.gitlab.gnome.org/libadwaita",
+                "russh https://github.com/Eugeny/russh",
+                "suppaftp https://github.com/veeso/suppaftp",
+                "Tokio https://tokio.rs",
+            ],
+        );
+
         about.present(Some(&window));
     }
 }

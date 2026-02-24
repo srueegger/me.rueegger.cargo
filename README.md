@@ -43,6 +43,7 @@ meson install -C build
 
 - [suppaftp](https://github.com/veeso/suppaftp) — Super FTP/FTPS client library for Rust, powering our FTP/FTPS protocol support
 - [russh](https://github.com/Eugeny/russh) — Pure-Rust SSH implementation used for SFTP connections
+- [Tokio](https://tokio.rs) — Asynchronous runtime for Rust, used for non-blocking network I/O
 
 ## License
 
