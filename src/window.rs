@@ -507,6 +507,9 @@ impl CargoWindow {
 
     fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {
         let config = profile.to_connection_config(password);
+        let local_dir = profile.local_dir.clone();
+        let remote_dir = profile.remote_dir.clone();
+        let sync_browsing = profile.sync_browsing;
         let imp = self.imp();
 
         // Show connecting state
@@ -534,6 +537,21 @@ impl CargoWindow {
                         .connect_button
                         .set_tooltip_text(Some("Disconnect"));
                     window.set_transfer_buttons_sensitive(true);
+
+                    // Apply profile directory settings
+                    if let Some(ref dir) = local_dir {
+                        let path = std::path::PathBuf::from(dir);
+                        if path.is_dir() {
+                            window.imp().left_panel.navigate_to(path);
+                        }
+                    }
+                    if let Some(ref dir) = remote_dir {
+                        window.imp().right_panel.navigate_to_remote(dir);
+                    }
+                    if sync_browsing {
+                        window.imp().sync_nav_button.set_active(true);
+                    }
+
                     let toast = adw::Toast::new("Connected");
                     window.imp().toast_overlay.add_toast(toast);
                 }

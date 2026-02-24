@@ -59,6 +59,12 @@ pub struct SiteProfile {
     pub port: u16,
     pub username: String,
     pub auth_method: AuthMethodType,
+    #[serde(default)]
+    pub local_dir: Option<String>,
+    #[serde(default)]
+    pub remote_dir: Option<String>,
+    #[serde(default)]
+    pub sync_browsing: bool,
 }
 
 impl SiteProfile {
@@ -71,6 +77,9 @@ impl SiteProfile {
             port: 22,
             username: String::new(),
             auth_method: AuthMethodType::Password,
+            local_dir: None,
+            remote_dir: None,
+            sync_browsing: false,
         }
     }
 

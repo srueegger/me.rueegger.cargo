@@ -48,7 +48,18 @@ mod imp {
         #[template_child]
         pub password_entry: TemplateChild<adw::PasswordEntryRow>,
 
+        // Directories
+        #[template_child]
+        pub local_dir_row: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub local_dir_browse_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub remote_dir_entry: TemplateChild<adw::EntryRow>,
+        #[template_child]
+        pub sync_browsing_switch: TemplateChild<adw::SwitchRow>,
+
         pub key_file_path: RefCell<String>,
+        pub local_dir_path: RefCell<String>,
 
         // State containers
         #[template_child]
@@ -223,6 +234,30 @@ impl CargoSiteManagerDialog {
                 dialog.save_current_form();
             }
         ));
+
+        self.imp().local_dir_browse_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |_| {
+                dialog.on_browse_local_dir();
+            }
+        ));
+
+        self.imp().remote_dir_entry.connect_changed(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |_| {
+                dialog.save_current_form();
+            }
+        ));
+
+        self.imp().sync_browsing_switch.connect_active_notify(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |_| {
+                dialog.save_current_form();
+            }
+        ));
     }
 
     fn on_site_selected(&self, row: Option<&gtk::ListBoxRow>) {
@@ -285,6 +320,17 @@ impl CargoSiteManagerDialog {
         imp.password_entry.set_text("");
         imp.password_entry.set_visible(auth_index != 2);
 
+        // Directories
+        let local_dir = site.local_dir.clone().unwrap_or_default();
+        *imp.local_dir_path.borrow_mut() = local_dir.clone();
+        if local_dir.is_empty() {
+            imp.local_dir_row.set_subtitle("Default");
+        } else {
+            imp.local_dir_row.set_subtitle(&local_dir);
+        }
+        imp.remote_dir_entry.set_text(site.remote_dir.as_deref().unwrap_or(""));
+        imp.sync_browsing_switch.set_active(site.sync_browsing);
+
         imp.updating_form.set(false);
     }
 
@@ -324,6 +370,12 @@ impl CargoSiteManagerDialog {
             2 => AuthMethodType::Agent,
             _ => AuthMethodType::Password,
         };
+
+        let local_dir = imp.local_dir_path.borrow().clone();
+        site.local_dir = if local_dir.is_empty() { None } else { Some(local_dir) };
+        let remote_dir = imp.remote_dir_entry.text().to_string();
+        site.remote_dir = if remote_dir.is_empty() { None } else { Some(remote_dir) };
+        site.sync_browsing = imp.sync_browsing_switch.is_active();
 
         let site_name = site.name.clone();
         let site_host = site.host.clone();
@@ -440,6 +492,43 @@ impl CargoSiteManagerDialog {
         self.imp().key_file_row.set_visible(selected == 1);
         // Password: visible for Password (0) and KeyFile passphrase (1)
         self.imp().password_entry.set_visible(selected != 2);
+    }
+
+    fn on_browse_local_dir(&self) {
+        let dialog = gtk::FileDialog::builder()
+            .title("Select Local Directory")
+            .modal(true)
+            .build();
+
+        // Start in the currently configured path, or home
+        let current = self.imp().local_dir_path.borrow().clone();
+        let start_dir = if current.is_empty() {
+            glib::home_dir()
+        } else {
+            std::path::PathBuf::from(&current)
+        };
+        if start_dir.is_dir() {
+            dialog.set_initial_folder(Some(&gio::File::for_path(&start_dir)));
+        }
+
+        let widget_weak = self.downgrade();
+        dialog.select_folder(
+            gtk::Window::NONE,
+            gio::Cancellable::NONE,
+            move |result| {
+                let Some(widget) = widget_weak.upgrade() else {
+                    return;
+                };
+                if let Ok(file) = result {
+                    if let Some(path) = file.path() {
+                        let path_str = path.display().to_string();
+                        *widget.imp().local_dir_path.borrow_mut() = path_str.clone();
+                        widget.imp().local_dir_row.set_subtitle(&path_str);
+                        widget.save_current_form();
+                    }
+                }
+            },
+        );
     }
 
     fn on_browse_key_file(&self) {
