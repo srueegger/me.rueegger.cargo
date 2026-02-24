@@ -13,6 +13,8 @@ use libadwaita as adw;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 
+use gettextrs::gettext;
+
 use crate::config::APP_ID;
 use crate::connection::ConnectionHandle;
 use crate::file_panel::{PanelMode, SyncEvent};
@@ -179,9 +181,9 @@ impl CargoWindow {
                     // Disconnect
                     window.imp().right_panel.set_local_mode();
                     window.imp().connect_button.set_icon_name("network-server-symbolic");
-                    window.imp().connect_button.set_tooltip_text(Some("Site Manager"));
+                    window.imp().connect_button.set_tooltip_text(Some(&gettext("Site Manager")));
                     window.set_transfer_buttons_sensitive(false);
-                    let toast = adw::Toast::new("Disconnected");
+                    let toast = adw::Toast::new(&gettext("Disconnected"));
                     window.imp().toast_overlay.add_toast(toast);
                 } else {
                     // Open Site Manager
@@ -333,7 +335,7 @@ impl CargoWindow {
         let imp = self.imp();
         let selected = imp.left_panel.selected_items();
         if selected.is_empty() {
-            let toast = adw::Toast::new("No files selected for upload");
+            let toast = adw::Toast::new(&gettext("No files selected for upload"));
             imp.toast_overlay.add_toast(toast);
             return;
         }
@@ -363,7 +365,7 @@ impl CargoWindow {
         }
 
         if queued == 0 {
-            let toast = adw::Toast::new("No files to upload (directories are skipped)");
+            let toast = adw::Toast::new(&gettext("No files to upload (directories are skipped)"));
             imp.toast_overlay.add_toast(toast);
             return;
         }
@@ -385,7 +387,7 @@ impl CargoWindow {
         let imp = self.imp();
         let selected = imp.right_panel.selected_items();
         if selected.is_empty() {
-            let toast = adw::Toast::new("No files selected for download");
+            let toast = adw::Toast::new(&gettext("No files selected for download"));
             imp.toast_overlay.add_toast(toast);
             return;
         }
@@ -415,7 +417,7 @@ impl CargoWindow {
         }
 
         if queued == 0 {
-            let toast = adw::Toast::new("No files to download (directories are skipped)");
+            let toast = adw::Toast::new(&gettext("No files to download (directories are skipped)"));
             imp.toast_overlay.add_toast(toast);
             return;
         }
@@ -490,10 +492,10 @@ impl CargoWindow {
                         if new_path.is_dir() {
                             imp.left_panel.navigate_to(new_path);
                         } else {
-                            let toast = adw::Toast::new(&format!(
-                                "Directory '{}' not found locally",
-                                name
-                            ));
+                            let toast = adw::Toast::new(
+                                &gettext("Directory '%s' not found locally")
+                                    .replace("%s", &name),
+                            );
                             imp.toast_overlay.add_toast(toast);
                         }
                     }
@@ -516,7 +518,7 @@ impl CargoWindow {
         if let Some(store) = imp.right_panel.imp().list_store.get() {
             store.remove_all();
         }
-        imp.right_panel.imp().status_label.set_label("Connecting...");
+        imp.right_panel.imp().status_label.set_label(&gettext("Connecting…"));
 
         let window_weak = self.downgrade();
 
@@ -535,7 +537,7 @@ impl CargoWindow {
                     window
                         .imp()
                         .connect_button
-                        .set_tooltip_text(Some("Disconnect"));
+                        .set_tooltip_text(Some(&gettext("Disconnect")));
                     window.set_transfer_buttons_sensitive(true);
 
                     // Apply profile directory settings
@@ -552,21 +554,23 @@ impl CargoWindow {
                         window.imp().sync_nav_button.set_active(true);
                     }
 
-                    let toast = adw::Toast::new("Connected");
+                    let toast = adw::Toast::new(&gettext("Connected"));
                     window.imp().toast_overlay.add_toast(toast);
                 }
                 Err(e) => {
                     let Some(window) = window_weak.upgrade() else {
                         return;
                     };
+                    let err_msg = gettext("Connection failed: %s")
+                        .replace("%s", &e.to_string());
                     window
                         .imp()
                         .right_panel
                         .imp()
                         .status_label
-                        .set_label(&format!("Connection failed: {}", e));
+                        .set_label(&err_msg);
                     let toast = adw::Toast::builder()
-                        .title(format!("Connection failed: {}", e))
+                        .title(err_msg.clone())
                         .timeout(5)
                         .build();
                     window.imp().toast_overlay.add_toast(toast);

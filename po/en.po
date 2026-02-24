@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cargo-app 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-23\n"
-"PO-Revision-Date: 2026-02-23\n"
+"POT-Creation-Date: 2026-02-24\n"
+"PO-Revision-Date: 2026-02-24\n"
 "Last-Translator: Samuel Rüegger <samuel@rueegger>\n"
 "Language-Team: English\n"
 "Language: en\n"
@@ -21,26 +21,278 @@ msgstr ""
 msgid "Transfer files between local and remote locations"
 msgstr "Transfer files between local and remote locations"
 
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Cargo"
+msgstr "Cargo"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid ""
+"Cargo is a dual-pane file transfer application for GNOME. Connect to FTP, "
+"FTPS, and SFTP servers and transfer files with a visual progress queue. "
+"Manage your server connections with the built-in site manager."
+msgstr ""
+"Cargo is a dual-pane file transfer application for GNOME. Connect to FTP, "
+"FTPS, and SFTP servers and transfer files with a visual progress queue. "
+"Manage your server connections with the built-in site manager."
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid ""
+"Features include synchronized directory navigation, a pausable transfer "
+"queue with individual controls, and SSH key authentication."
+msgstr ""
+"Features include synchronized directory navigation, a pausable transfer "
+"queue with individual controls, and SSH key authentication."
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Initial release with FTP, FTPS, and SFTP support."
+msgstr "Initial release with FTP, FTPS, and SFTP support."
+
 #: data/ui/window.ui
 msgid "Site Manager"
 msgstr "Site Manager"
+
+#: data/ui/window.ui
+msgid "Upload selected files"
+msgstr "Upload selected files"
+
+#: data/ui/window.ui
+msgid "Download selected files"
+msgstr "Download selected files"
+
+#: data/ui/window.ui
+msgid "Show Hidden Files"
+msgstr "Show Hidden Files"
+
+#: data/ui/window.ui
+msgid "Synchronized Browsing"
+msgstr "Synchronized Browsing"
 
 #: data/ui/window.ui
 msgid "Main Menu"
 msgstr "Main Menu"
 
 #: data/ui/window.ui
-msgid "Cargo"
-msgstr "Cargo"
+msgid "Transfers"
+msgstr "Transfers"
 
 #: data/ui/window.ui
-msgid "Connect to a server to start transferring files"
-msgstr "Connect to a server to start transferring files"
+msgid "Clear completed transfers"
+msgstr "Clear completed transfers"
 
 #: data/ui/window.ui
 msgid "_About Cargo"
 msgstr "_About Cargo"
 
+#: data/ui/file_panel.ui
+msgid "Go to parent directory"
+msgstr "Go to parent directory"
+
+#: data/ui/file_panel.ui
+msgid "Enter path..."
+msgstr "Enter path..."
+
+#: data/ui/file_panel.ui
+msgid "Name"
+msgstr "Name"
+
+#: data/ui/file_panel.ui
+msgid "Size"
+msgstr "Size"
+
+#: data/ui/file_panel.ui
+msgid "Modified"
+msgstr "Modified"
+
+#: data/ui/file_panel.ui
+msgid "Permissions"
+msgstr "Permissions"
+
+#: data/ui/site_manager_dialog.ui
+msgid "New Site"
+msgstr "New Site"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Connect"
+msgstr "Connect"
+
+#: data/ui/site_manager_dialog.ui
+msgid "No saved sites"
+msgstr "No saved sites"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Select a Site"
+msgstr "Select a Site"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Select a site from the list or create a new one"
+msgstr "Select a site from the list or create a new one"
+
+#: data/ui/site_manager_dialog.ui
+msgid "General"
+msgstr "General"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Site Name"
+msgstr "Site Name"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Connection"
+msgstr "Connection"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Protocol"
+msgstr "Protocol"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Host"
+msgstr "Host"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Port"
+msgstr "Port"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Authentication"
+msgstr "Authentication"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Username"
+msgstr "Username"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Authentication Method"
+msgstr "Authentication Method"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Password"
+msgstr "Password"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Key File"
+msgstr "Key File"
+
+#: data/ui/site_manager_dialog.ui
+msgid "SSH Agent"
+msgstr "SSH Agent"
+
+#: data/ui/site_manager_dialog.ui
+msgid "No file selected"
+msgstr "No file selected"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Browse for key file"
+msgstr "Browse for key file"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Directories"
+msgstr "Directories"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Local Directory"
+msgstr "Local Directory"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Default"
+msgstr "Default"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Browse for directory"
+msgstr "Browse for directory"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Remote Directory"
+msgstr "Remote Directory"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Keep both panels in sync when changing directories"
+msgstr "Keep both panels in sync when changing directories"
+
+#: data/ui/site_manager_dialog.ui
+msgid "Delete Site"
+msgstr "Delete Site"
+
 #: src/application.rs
 msgid "translator-credits"
 msgstr "Samuel Rüegger <samuel@rueegger>"
+
+#: src/application.rs
+msgid "Libraries"
+msgstr "Libraries"
+
+#: src/window.rs
+msgid "Disconnected"
+msgstr "Disconnected"
+
+#: src/window.rs
+msgid "Connected"
+msgstr "Connected"
+
+#: src/window.rs
+msgid "Disconnect"
+msgstr "Disconnect"
+
+#: src/window.rs
+msgid "Connecting…"
+msgstr "Connecting…"
+
+#: src/window.rs
+msgid "No files selected for upload"
+msgstr "No files selected for upload"
+
+#: src/window.rs
+msgid "No files to upload (directories are skipped)"
+msgstr "No files to upload (directories are skipped)"
+
+#: src/window.rs
+msgid "No files selected for download"
+msgstr "No files selected for download"
+
+#: src/window.rs
+msgid "No files to download (directories are skipped)"
+msgstr "No files to download (directories are skipped)"
+
+#: src/window.rs
+msgid "Directory ‘%s’ not found locally"
+msgstr "Directory ‘%s’ not found locally"
+
+#: src/window.rs
+msgid "Connection failed: %s"
+msgstr "Connection failed: %s"
+
+#: src/file_panel.rs
+msgid "%u item"
+msgid_plural "%u items"
+msgstr[0] "%u item"
+msgstr[1] "%u items"
+
+#: src/file_panel.rs
+msgid "Error: %s"
+msgstr "Error: %s"
+
+#: src/file_panel.rs
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/site_manager_dialog.rs
+msgid "Select Local Directory"
+msgstr "Select Local Directory"
+
+#: src/site_manager_dialog.rs
+msgid "Select SSH Key File"
+msgstr "Select SSH Key File"
+
+#: src/transfer_item.rs
+msgid "Queued"
+msgstr "Queued"
+
+#: src/transfer_item.rs
+msgid "Completed"
+msgstr "Completed"
+
+#: src/transfer_item.rs
+msgid "Failed"
+msgstr "Failed"
+
+#: src/transfer_item.rs
+msgid "Failed: %s"
+msgstr "Failed: %s"
