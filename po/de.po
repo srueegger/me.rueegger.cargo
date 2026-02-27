@@ -289,6 +289,10 @@ msgstr "Verzeichnis „%s“ wurde lokal nicht gefunden"
 msgid "Connection failed: %s"
 msgstr "Verbindung fehlgeschlagen: %s"
 
+#: src/window.rs
+msgid "Connect to a server first"
+msgstr "Zuerst mit einem Server verbinden"
+
 #
 # ── file_panel.rs ─────────────────────────────────────────────
 #

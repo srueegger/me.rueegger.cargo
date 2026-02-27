@@ -7,7 +7,7 @@
 // (at your option) any later version.
 
 use gettextrs::gettext;
-use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use gtk::{gio, gdk, glib, prelude::*, subclass::prelude::*};
 use libadwaita as adw;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -37,6 +37,18 @@ mod imp {
     }
 
     impl ApplicationImpl for CargoApplication {
+        fn startup(&self) {
+            self.parent_startup();
+
+            let provider = gtk::CssProvider::new();
+            provider.load_from_resource("/me/rueegger/cargo/style.css");
+            gtk::style_context_add_provider_for_display(
+                &gdk::Display::default().unwrap(),
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
+
         fn activate(&self) {
             let app = self.obj();
             let window = if let Some(window) = app.active_window() {

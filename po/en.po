@@ -259,6 +259,10 @@ msgstr "Directory ‘%s’ not found locally"
 msgid "Connection failed: %s"
 msgstr "Connection failed: %s"
 
+#: src/window.rs
+msgid "Connect to a server first"
+msgstr "Connect to a server first"
+
 #: src/file_panel.rs
 msgid "%u item"
 msgid_plural "%u items"
