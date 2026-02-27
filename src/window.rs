@@ -460,6 +460,7 @@ impl CargoWindow {
     fn attach_drag_source(panel: &crate::file_panel::FilePanel, panel_id: &str) {
         let drag_source = gtk::DragSource::new();
         drag_source.set_actions(gdk::DragAction::COPY);
+        drag_source.set_propagation_phase(gtk::PropagationPhase::Capture);
 
         let panel_id = panel_id.to_string();
         let panel_weak = panel.downgrade();
