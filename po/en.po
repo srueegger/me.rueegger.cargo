@@ -240,16 +240,8 @@ msgid "No files selected for upload"
 msgstr "No files selected for upload"
 
 #: src/window.rs
-msgid "No files to upload (directories are skipped)"
-msgstr "No files to upload (directories are skipped)"
-
-#: src/window.rs
 msgid "No files selected for download"
 msgstr "No files selected for download"
-
-#: src/window.rs
-msgid "No files to download (directories are skipped)"
-msgstr "No files to download (directories are skipped)"
 
 #: src/window.rs
 msgid "Directory ‘%s’ not found locally"

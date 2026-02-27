@@ -270,16 +270,8 @@ msgid "No files selected for upload"
 msgstr "Keine Dateien zum Hochladen ausgewählt"
 
 #: src/window.rs
-msgid "No files to upload (directories are skipped)"
-msgstr "Keine Dateien zum Hochladen (Verzeichnisse werden übersprungen)"
-
-#: src/window.rs
 msgid "No files selected for download"
 msgstr "Keine Dateien zum Herunterladen ausgewählt"
-
-#: src/window.rs
-msgid "No files to download (directories are skipped)"
-msgstr "Keine Dateien zum Herunterladen (Verzeichnisse werden übersprungen)"
 
 #: src/window.rs
 msgid "Directory ‘%s’ not found locally"

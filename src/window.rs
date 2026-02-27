@@ -25,7 +25,7 @@ use crate::transfer_queue::TransferQueue;
 #[derive(serde::Serialize, serde::Deserialize)]
 struct DndPayload {
     source: String,
-    files: Vec<String>,
+    items: Vec<(String, bool)>, // (name, is_dir)
 }
 
 enum TransferDirection {
@@ -339,48 +339,119 @@ impl CargoWindow {
         }
     }
 
-    fn enqueue_transfers(
+    fn enqueue_items(
         &self,
-        file_names: &[String],
-        local_dir: &std::path::Path,
-        remote_dir: &str,
+        items: Vec<(String, bool)>,
+        local_dir: std::path::PathBuf,
+        remote_dir: String,
         direction: TransferDirection,
     ) {
-        let Some(conn) = self.get_connection() else {
-            return;
-        };
-        let imp = self.imp();
-
-        for name in file_names {
-            let local_path = local_dir.join(name);
-            let remote_path = if remote_dir.ends_with('/') {
-                format!("{}{}", remote_dir, name)
-            } else {
-                format!("{}/{}", remote_dir, name)
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else {
+                return;
             };
-
-            let transfer = match direction {
-                TransferDirection::Upload => TransferItem::new_upload(
-                    name,
-                    &local_path.display().to_string(),
-                    &remote_path,
-                ),
-                TransferDirection::Download => TransferItem::new_download(
-                    name,
-                    &local_path.display().to_string(),
-                    &remote_path,
-                ),
+            let Some(conn) = window.get_connection() else {
+                return;
             };
-            imp.transfer_queue.get().unwrap().enqueue(transfer);
-        }
+            let imp = window.imp();
 
-        imp.transfer_revealer.set_reveal_child(true);
-        TransferQueue::start_processing(
-            imp.transfer_queue.get().unwrap(),
-            &conn,
-            &imp.left_panel,
-            &imp.right_panel,
-        );
+            let mut transfers: Vec<(String, String, String)> = Vec::new();
+
+            for (name, is_dir) in &items {
+                let local_path = local_dir.join(name);
+                let remote_path = if remote_dir.ends_with('/') {
+                    format!("{}{}", remote_dir, name)
+                } else {
+                    format!("{}/{}", remote_dir, name)
+                };
+
+                if !is_dir {
+                    transfers.push((
+                        name.clone(),
+                        local_path.display().to_string(),
+                        remote_path,
+                    ));
+                } else {
+                    match direction {
+                        TransferDirection::Upload => {
+                            let mut dirs_to_walk =
+                                vec![(local_path.clone(), remote_path.clone())];
+                            while let Some((ldir, rdir)) = dirs_to_walk.pop() {
+                                let _ = conn.mkdir(&rdir).await;
+                                let Ok(entries) = std::fs::read_dir(&ldir) else {
+                                    continue;
+                                };
+                                for entry in entries.flatten() {
+                                    let ename =
+                                        entry.file_name().to_string_lossy().to_string();
+                                    let epath = entry.path();
+                                    let rpath = format!("{}/{}", rdir, ename);
+                                    if entry
+                                        .file_type()
+                                        .map(|t| t.is_dir())
+                                        .unwrap_or(false)
+                                    {
+                                        dirs_to_walk.push((epath, rpath));
+                                    } else {
+                                        transfers.push((
+                                            ename,
+                                            epath.display().to_string(),
+                                            rpath,
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                        TransferDirection::Download => {
+                            let mut dirs_to_walk =
+                                vec![(local_path.clone(), remote_path.clone())];
+                            while let Some((ldir, rdir)) = dirs_to_walk.pop() {
+                                let _ = std::fs::create_dir_all(&ldir);
+                                let Ok(entries) = conn.list_dir(&rdir).await else {
+                                    continue;
+                                };
+                                for entry in entries {
+                                    let lpath = ldir.join(&entry.name);
+                                    let rpath = format!("{}/{}", rdir, entry.name);
+                                    if entry.is_dir {
+                                        dirs_to_walk.push((lpath, rpath));
+                                    } else {
+                                        transfers.push((
+                                            entry.name.clone(),
+                                            lpath.display().to_string(),
+                                            rpath,
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (filename, local_path, remote_path) in &transfers {
+                let transfer = match direction {
+                    TransferDirection::Upload => {
+                        TransferItem::new_upload(filename, local_path, remote_path)
+                    }
+                    TransferDirection::Download => {
+                        TransferItem::new_download(filename, local_path, remote_path)
+                    }
+                };
+                imp.transfer_queue.get().unwrap().enqueue(transfer);
+            }
+
+            if !transfers.is_empty() {
+                imp.transfer_revealer.set_reveal_child(true);
+                TransferQueue::start_processing(
+                    imp.transfer_queue.get().unwrap(),
+                    &conn,
+                    &imp.left_panel,
+                    &imp.right_panel,
+                );
+            }
+        });
     }
 
     fn on_upload_clicked(&self) {
@@ -396,22 +467,15 @@ impl CargoWindow {
             return;
         }
 
-        let file_names: Vec<String> = selected
+        let items: Vec<(String, bool)> = selected
             .iter()
-            .filter(|i| !i.is_dir())
-            .map(|i| i.name())
+            .map(|i| (i.name(), i.is_dir()))
             .collect();
 
-        if file_names.is_empty() {
-            let toast = adw::Toast::new(&gettext("No files to upload (directories are skipped)"));
-            imp.toast_overlay.add_toast(toast);
-            return;
-        }
-
-        self.enqueue_transfers(
-            &file_names,
-            &imp.left_panel.current_path(),
-            &imp.right_panel.remote_path(),
+        self.enqueue_items(
+            items,
+            imp.left_panel.current_path(),
+            imp.right_panel.remote_path(),
             TransferDirection::Upload,
         );
     }
@@ -429,22 +493,15 @@ impl CargoWindow {
             return;
         }
 
-        let file_names: Vec<String> = selected
+        let items: Vec<(String, bool)> = selected
             .iter()
-            .filter(|i| !i.is_dir())
-            .map(|i| i.name())
+            .map(|i| (i.name(), i.is_dir()))
             .collect();
 
-        if file_names.is_empty() {
-            let toast = adw::Toast::new(&gettext("No files to download (directories are skipped)"));
-            imp.toast_overlay.add_toast(toast);
-            return;
-        }
-
-        self.enqueue_transfers(
-            &file_names,
-            &imp.left_panel.current_path(),
-            &imp.right_panel.remote_path(),
+        self.enqueue_items(
+            items,
+            imp.left_panel.current_path(),
+            imp.right_panel.remote_path(),
             TransferDirection::Download,
         );
     }
@@ -466,18 +523,17 @@ impl CargoWindow {
         let panel_weak = panel.downgrade();
         drag_source.connect_prepare(move |_source, _x, _y| {
             let panel = panel_weak.upgrade()?;
-            let files: Vec<String> = panel
+            let items: Vec<(String, bool)> = panel
                 .selected_items()
                 .iter()
-                .filter(|i| !i.is_dir())
-                .map(|i| i.name())
+                .map(|i| (i.name(), i.is_dir()))
                 .collect();
-            if files.is_empty() {
+            if items.is_empty() {
                 return None;
             }
             let payload = DndPayload {
                 source: panel_id.clone(),
-                files,
+                items,
             };
             let json = serde_json::to_string(&payload).ok()?;
             Some(gdk::ContentProvider::for_value(&json.to_value()))
@@ -535,10 +591,10 @@ impl CargoWindow {
             } else {
                 TransferDirection::Download
             };
-            window.enqueue_transfers(
-                &payload.files,
-                &window.imp().left_panel.current_path(),
-                &window.imp().right_panel.remote_path(),
+            window.enqueue_items(
+                payload.items,
+                window.imp().left_panel.current_path(),
+                window.imp().right_panel.remote_path(),
                 direction,
             );
             true
