@@ -441,6 +441,10 @@ impl FilePanel {
         }
     }
 
+    pub fn column_view(&self) -> &gtk::ColumnView {
+        &self.imp().column_view
+    }
+
     pub fn current_path(&self) -> PathBuf {
         self.imp().current_path.borrow().clone()
     }

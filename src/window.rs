@@ -8,7 +8,7 @@
 
 use std::rc::Rc;
 
-use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gio, gdk, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 use libadwaita as adw;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -21,6 +21,17 @@ use crate::file_panel::{PanelMode, SyncEvent};
 use crate::site_manager::SiteProfile;
 use crate::transfer_item::*;
 use crate::transfer_queue::TransferQueue;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct DndPayload {
+    source: String,
+    items: Vec<(String, bool)>, // (name, is_dir)
+}
+
+enum TransferDirection {
+    Upload,
+    Download,
+}
 
 mod imp {
     use super::*;
@@ -93,6 +104,7 @@ mod imp {
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
             obj.setup_sync_navigation();
+            obj.setup_drag_and_drop();
         }
     }
 
@@ -327,10 +339,125 @@ impl CargoWindow {
         }
     }
 
+    fn enqueue_items(
+        &self,
+        items: Vec<(String, bool)>,
+        local_dir: std::path::PathBuf,
+        remote_dir: String,
+        direction: TransferDirection,
+    ) {
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else {
+                return;
+            };
+            let Some(conn) = window.get_connection() else {
+                return;
+            };
+            let imp = window.imp();
+
+            let mut transfers: Vec<(String, String, String)> = Vec::new();
+
+            for (name, is_dir) in &items {
+                let local_path = local_dir.join(name);
+                let remote_path = if remote_dir.ends_with('/') {
+                    format!("{}{}", remote_dir, name)
+                } else {
+                    format!("{}/{}", remote_dir, name)
+                };
+
+                if !is_dir {
+                    transfers.push((
+                        name.clone(),
+                        local_path.display().to_string(),
+                        remote_path,
+                    ));
+                } else {
+                    match direction {
+                        TransferDirection::Upload => {
+                            let mut dirs_to_walk =
+                                vec![(local_path.clone(), remote_path.clone())];
+                            while let Some((ldir, rdir)) = dirs_to_walk.pop() {
+                                let _ = conn.mkdir(&rdir).await;
+                                let Ok(entries) = std::fs::read_dir(&ldir) else {
+                                    continue;
+                                };
+                                for entry in entries.flatten() {
+                                    let ename =
+                                        entry.file_name().to_string_lossy().to_string();
+                                    let epath = entry.path();
+                                    let rpath = format!("{}/{}", rdir, ename);
+                                    if entry
+                                        .file_type()
+                                        .map(|t| t.is_dir())
+                                        .unwrap_or(false)
+                                    {
+                                        dirs_to_walk.push((epath, rpath));
+                                    } else {
+                                        transfers.push((
+                                            ename,
+                                            epath.display().to_string(),
+                                            rpath,
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                        TransferDirection::Download => {
+                            let mut dirs_to_walk =
+                                vec![(local_path.clone(), remote_path.clone())];
+                            while let Some((ldir, rdir)) = dirs_to_walk.pop() {
+                                let _ = std::fs::create_dir_all(&ldir);
+                                let Ok(entries) = conn.list_dir(&rdir).await else {
+                                    continue;
+                                };
+                                for entry in entries {
+                                    let lpath = ldir.join(&entry.name);
+                                    let rpath = format!("{}/{}", rdir, entry.name);
+                                    if entry.is_dir {
+                                        dirs_to_walk.push((lpath, rpath));
+                                    } else {
+                                        transfers.push((
+                                            entry.name.clone(),
+                                            lpath.display().to_string(),
+                                            rpath,
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (filename, local_path, remote_path) in &transfers {
+                let transfer = match direction {
+                    TransferDirection::Upload => {
+                        TransferItem::new_upload(filename, local_path, remote_path)
+                    }
+                    TransferDirection::Download => {
+                        TransferItem::new_download(filename, local_path, remote_path)
+                    }
+                };
+                imp.transfer_queue.get().unwrap().enqueue(transfer);
+            }
+
+            if !transfers.is_empty() {
+                imp.transfer_revealer.set_reveal_child(true);
+                TransferQueue::start_processing(
+                    imp.transfer_queue.get().unwrap(),
+                    &conn,
+                    &imp.left_panel,
+                    &imp.right_panel,
+                );
+            }
+        });
+    }
+
     fn on_upload_clicked(&self) {
-        let Some(conn) = self.get_connection() else {
+        if self.get_connection().is_none() {
             return;
-        };
+        }
 
         let imp = self.imp();
         let selected = imp.left_panel.selected_items();
@@ -340,49 +467,23 @@ impl CargoWindow {
             return;
         }
 
-        let local_dir = imp.left_panel.current_path();
-        let remote_dir = imp.right_panel.remote_path();
-        let mut queued = 0;
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
 
-        for item in &selected {
-            if item.is_dir() {
-                continue;
-            }
-            let local_path = local_dir.join(item.name());
-            let remote_path = if remote_dir.ends_with('/') {
-                format!("{}{}", remote_dir, item.name())
-            } else {
-                format!("{}/{}", remote_dir, item.name())
-            };
-
-            let transfer = TransferItem::new_upload(
-                &item.name(),
-                &local_path.display().to_string(),
-                &remote_path,
-            );
-            imp.transfer_queue.get().unwrap().enqueue(transfer);
-            queued += 1;
-        }
-
-        if queued == 0 {
-            let toast = adw::Toast::new(&gettext("No files to upload (directories are skipped)"));
-            imp.toast_overlay.add_toast(toast);
-            return;
-        }
-
-        imp.transfer_revealer.set_reveal_child(true);
-        TransferQueue::start_processing(
-            imp.transfer_queue.get().unwrap(),
-            &conn,
-            &imp.left_panel,
-            &imp.right_panel,
+        self.enqueue_items(
+            items,
+            imp.left_panel.current_path(),
+            imp.right_panel.remote_path(),
+            TransferDirection::Upload,
         );
     }
 
     fn on_download_clicked(&self) {
-        let Some(conn) = self.get_connection() else {
+        if self.get_connection().is_none() {
             return;
-        };
+        }
 
         let imp = self.imp();
         let selected = imp.right_panel.selected_items();
@@ -392,43 +493,114 @@ impl CargoWindow {
             return;
         }
 
-        let local_dir = imp.left_panel.current_path();
-        let remote_dir = imp.right_panel.remote_path();
-        let mut queued = 0;
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
 
-        for item in &selected {
-            if item.is_dir() {
-                continue;
-            }
-            let local_path = local_dir.join(item.name());
-            let remote_path = if remote_dir.ends_with('/') {
-                format!("{}{}", remote_dir, item.name())
-            } else {
-                format!("{}/{}", remote_dir, item.name())
-            };
-
-            let transfer = TransferItem::new_download(
-                &item.name(),
-                &local_path.display().to_string(),
-                &remote_path,
-            );
-            imp.transfer_queue.get().unwrap().enqueue(transfer);
-            queued += 1;
-        }
-
-        if queued == 0 {
-            let toast = adw::Toast::new(&gettext("No files to download (directories are skipped)"));
-            imp.toast_overlay.add_toast(toast);
-            return;
-        }
-
-        imp.transfer_revealer.set_reveal_child(true);
-        TransferQueue::start_processing(
-            imp.transfer_queue.get().unwrap(),
-            &conn,
-            &imp.left_panel,
-            &imp.right_panel,
+        self.enqueue_items(
+            items,
+            imp.left_panel.current_path(),
+            imp.right_panel.remote_path(),
+            TransferDirection::Download,
         );
+    }
+
+    fn setup_drag_and_drop(&self) {
+        let imp = self.imp();
+        Self::attach_drag_source(&imp.left_panel, "left");
+        Self::attach_drag_source(&imp.right_panel, "right");
+        self.attach_drop_target(&imp.left_panel, "left");
+        self.attach_drop_target(&imp.right_panel, "right");
+    }
+
+    fn attach_drag_source(panel: &crate::file_panel::FilePanel, panel_id: &str) {
+        let drag_source = gtk::DragSource::new();
+        drag_source.set_actions(gdk::DragAction::COPY);
+        drag_source.set_propagation_phase(gtk::PropagationPhase::Capture);
+
+        let panel_id = panel_id.to_string();
+        let panel_weak = panel.downgrade();
+        drag_source.connect_prepare(move |_source, _x, _y| {
+            let panel = panel_weak.upgrade()?;
+            let items: Vec<(String, bool)> = panel
+                .selected_items()
+                .iter()
+                .map(|i| (i.name(), i.is_dir()))
+                .collect();
+            if items.is_empty() {
+                return None;
+            }
+            let payload = DndPayload {
+                source: panel_id.clone(),
+                items,
+            };
+            let json = serde_json::to_string(&payload).ok()?;
+            Some(gdk::ContentProvider::for_value(&json.to_value()))
+        });
+
+        panel.column_view().add_controller(drag_source);
+    }
+
+    fn attach_drop_target(&self, panel: &crate::file_panel::FilePanel, panel_id: &str) {
+        let drop_target = gtk::DropTarget::new(String::static_type(), gdk::DragAction::COPY);
+
+        let panel_weak = panel.downgrade();
+        drop_target.connect_enter(move |_target, _x, _y| {
+            if let Some(p) = panel_weak.upgrade() {
+                p.column_view().add_css_class("drop-target-highlight");
+            }
+            gdk::DragAction::COPY
+        });
+
+        let panel_weak = panel.downgrade();
+        drop_target.connect_leave(move |_target| {
+            if let Some(p) = panel_weak.upgrade() {
+                p.column_view().remove_css_class("drop-target-highlight");
+            }
+        });
+
+        let this_panel = panel_id.to_string();
+        let window_weak = self.downgrade();
+        let panel_weak = panel.downgrade();
+        drop_target.connect_drop(move |_target, value, _x, _y| {
+            if let Some(p) = panel_weak.upgrade() {
+                p.column_view().remove_css_class("drop-target-highlight");
+            }
+            let json = match value.get::<String>() {
+                Ok(s) => s,
+                Err(_) => return false,
+            };
+            let payload: DndPayload = match serde_json::from_str(&json) {
+                Ok(p) => p,
+                Err(_) => return false,
+            };
+            if payload.source == this_panel {
+                return false;
+            }
+            let Some(window) = window_weak.upgrade() else {
+                return false;
+            };
+            if window.get_connection().is_none() {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return false;
+            }
+            let direction = if payload.source == "left" {
+                TransferDirection::Upload
+            } else {
+                TransferDirection::Download
+            };
+            window.enqueue_items(
+                payload.items,
+                window.imp().left_panel.current_path(),
+                window.imp().right_panel.remote_path(),
+                direction,
+            );
+            true
+        });
+
+        panel.column_view().add_controller(drop_target);
     }
 
     fn setup_sync_navigation(&self) {

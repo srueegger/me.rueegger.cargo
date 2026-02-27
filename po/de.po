@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.1.0\n"
+"Project-Id-Version: cargo-app 0.2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -270,16 +270,8 @@ msgid "No files selected for upload"
 msgstr "Keine Dateien zum Hochladen ausgewählt"
 
 #: src/window.rs
-msgid "No files to upload (directories are skipped)"
-msgstr "Keine Dateien zum Hochladen (Verzeichnisse werden übersprungen)"
-
-#: src/window.rs
 msgid "No files selected for download"
 msgstr "Keine Dateien zum Herunterladen ausgewählt"
-
-#: src/window.rs
-msgid "No files to download (directories are skipped)"
-msgstr "Keine Dateien zum Herunterladen (Verzeichnisse werden übersprungen)"
 
 #: src/window.rs
 msgid "Directory ‘%s’ not found locally"
@@ -288,6 +280,10 @@ msgstr "Verzeichnis „%s“ wurde lokal nicht gefunden"
 #: src/window.rs
 msgid "Connection failed: %s"
 msgstr "Verbindung fehlgeschlagen: %s"
+
+#: src/window.rs
+msgid "Connect to a server first"
+msgstr "Zuerst mit einem Server verbinden"
 
 #
 # ── file_panel.rs ─────────────────────────────────────────────

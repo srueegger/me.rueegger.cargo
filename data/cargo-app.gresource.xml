@@ -4,5 +4,6 @@
     <file>ui/window.ui</file>
     <file>ui/file_panel.ui</file>
     <file>ui/site_manager_dialog.ui</file>
+    <file>style.css</file>
   </gresource>
 </gresources>

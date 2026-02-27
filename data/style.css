@@ -1,0 +1,4 @@
+.drop-target-highlight {
+    outline: 2px dashed @accent_color;
+    outline-offset: -2px;
+}
