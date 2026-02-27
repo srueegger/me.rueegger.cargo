@@ -122,28 +122,92 @@ fn format_timestamp(ts: i64) -> String {
 }
 
 fn icon_for_filename(name: &str) -> &'static str {
-    let lower = name.to_lowercase();
-    if lower.ends_with(".jpg")
-        || lower.ends_with(".jpeg")
-        || lower.ends_with(".png")
-        || lower.ends_with(".gif")
-        || lower.ends_with(".svg")
-        || lower.ends_with(".webp")
-    {
-        "image-x-generic-symbolic"
-    } else if lower.ends_with(".mp3")
-        || lower.ends_with(".flac")
-        || lower.ends_with(".ogg")
-        || lower.ends_with(".wav")
-    {
-        "audio-x-generic-symbolic"
-    } else if lower.ends_with(".mp4")
-        || lower.ends_with(".mkv")
-        || lower.ends_with(".avi")
-        || lower.ends_with(".webm")
-    {
-        "video-x-generic-symbolic"
-    } else {
-        "text-x-generic-symbolic"
+    let ext = name
+        .rfind('.')
+        .map(|i| name[i + 1..].to_ascii_lowercase())
+        .unwrap_or_default();
+
+    // Icons verified against Adwaita icon theme (mimetypes/symbolic)
+    match ext.as_str() {
+        // Images
+        "jpg" | "jpeg" | "png" | "gif" | "svg" | "webp" | "bmp" | "ico" | "tiff" | "tif"
+        | "heic" | "heif" | "avif" | "raw" | "cr2" | "nef" | "psd" | "xcf" => {
+            "image-x-generic-symbolic"
+        }
+
+        // Audio
+        "mp3" | "flac" | "ogg" | "oga" | "wav" | "aac" | "wma" | "m4a" | "opus" | "aiff"
+        | "mid" | "midi" | "ac3" => "audio-x-generic-symbolic",
+
+        // Video
+        "mp4" | "mkv" | "avi" | "webm" | "mov" | "wmv" | "flv" | "m4v" | "mpg" | "mpeg"
+        | "3gp" | "ogv" => "video-x-generic-symbolic",
+
+        // Documents
+        "pdf" | "doc" | "docx" | "odt" | "rtf" | "epub" | "djvu" | "pages" | "md"
+        | "markdown" | "rst" | "adoc" | "tex" | "latex" => "x-office-document-symbolic",
+
+        // Spreadsheets
+        "xls" | "xlsx" | "ods" | "csv" | "tsv" | "numbers" => "x-office-spreadsheet-symbolic",
+
+        // Presentations
+        "ppt" | "pptx" | "odp" | "key" => "x-office-presentation-symbolic",
+
+        // Drawings / vector
+        "odg" | "vsd" | "vsdx" | "dia" => "x-office-drawing-symbolic",
+
+        // Archives / packages
+        "zip" | "tar" | "gz" | "bz2" | "xz" | "zst" | "lz4" | "lzma" | "7z" | "rar"
+        | "deb" | "rpm" | "flatpak" | "snap" | "cab" | "cpio" | "ar" | "tgz" | "tbz2"
+        | "txz" => "package-x-generic-symbolic",
+
+        // Fonts
+        "ttf" | "otf" | "woff" | "woff2" | "eot" => "font-x-generic-symbolic",
+
+        // Executables / binaries
+        "exe" | "msi" | "bin" | "appimage" | "run" | "dmg" | "pkg" => {
+            "application-x-executable-symbolic"
+        }
+
+        // Shared libraries
+        "so" | "dll" | "dylib" => "application-x-sharedlib-symbolic",
+
+        // Disk images
+        "iso" | "img" => "media-optical-symbolic",
+
+        // Certificates / keys
+        "pem" | "crt" | "cer" | "p12" | "pfx" => "application-certificate-symbolic",
+
+        // Add-ons / plugins / extensions
+        "xpi" | "crx" => "application-x-addon-symbolic",
+
+        // Firmware
+        "fw" | "rom" | "bios" => "application-x-firmware-symbolic",
+
+        // RSS / Atom feeds
+        "rss" | "atom" => "application-rss+xml-symbolic",
+
+        // vCard / contacts
+        "vcf" | "vcard" => "x-office-address-book-symbolic",
+
+        // Calendar
+        "ics" | "ical" => "x-office-calendar-symbolic",
+
+        // Code, scripts, web, config — all use text-x-generic
+        // (no script/html/css-specific icons in Adwaita)
+        "sh" | "bash" | "zsh" | "fish" | "py" | "rb" | "pl" | "pm" | "php" | "js" | "mjs"
+        | "cjs" | "jsx" | "tsx" | "lua" | "go" | "rs" | "c" | "cpp" | "cc" | "cxx" | "h"
+        | "hpp" | "hxx" | "java" | "kt" | "kts" | "swift" | "dart" | "cs" | "vb" | "fs"
+        | "r" | "scala" | "groovy" | "clj" | "ex" | "exs" | "erl" | "hs" | "ml" | "mli"
+        | "ps1" | "bat" | "cmd" | "vbs" | "awk" | "sed" | "m" | "mm" | "v" | "sv"
+        | "vhdl" | "zig" | "nim" | "cr" | "jl" | "tcl" | "lisp" | "el" | "vim" | "html"
+        | "htm" | "xhtml" | "vue" | "svelte" | "css" | "scss" | "sass" | "less" | "styl"
+        | "json" | "yaml" | "yml" | "xml" | "toml" | "ini" | "cfg" | "conf" | "env"
+        | "properties" | "plist" | "reg" | "sql" | "graphql" | "proto" | "ts" => {
+            "text-x-generic-symbolic"
+        }
+
+        // Fallback
+        _ => "text-x-generic-symbolic",
     }
 }
