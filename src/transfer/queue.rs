@@ -16,7 +16,7 @@ use crate::dialogs::{self, ConflictAction};
 use crate::connection::ConnectionHandle;
 use crate::file_panel::FilePanel;
 use crate::protocol::TransferProgress;
-use crate::transfer_item::*;
+use crate::transfer::item::*;
 
 /// Manages a queue of file transfers processed sequentially.
 #[derive(Debug)]

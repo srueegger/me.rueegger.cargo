@@ -4,8 +4,14 @@ data/ui/window.ui
 data/ui/file_panel.ui
 data/ui/site_manager_dialog.ui
 src/application.rs
-src/window.rs
+src/window/mod.rs
+src/window/sidebar.rs
+src/window/connection.rs
+src/window/transfers.rs
+src/window/file_operations.rs
 src/file_panel.rs
-src/site_manager_dialog.rs
-src/transfer_item.rs
+src/dialogs/site_manager/mod.rs
+src/dialogs/site_manager/form.rs
+src/dialogs/site_manager/actions.rs
+src/transfer/item.rs
 src/dialogs/chmod_dialog.rs
