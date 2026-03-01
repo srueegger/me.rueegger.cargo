@@ -31,6 +31,7 @@ When a file already exists at the destination, choose how to handle conflicts �
 - **FTP/FTPS support** — Connect to FTP servers with optional TLS encryption
 - **SFTP support** — Secure file transfer over SSH with key, password, or agent authentication
 - **Site Manager** — Save and organize your server connections
+- **Quick Connect Sidebar** — One-click access to saved connections with protocol indicators
 - **Transfer Queue** — Visual progress with pause, resume, and cancel controls per transfer
 - **Synchronized Navigation** — Optionally keep both panels in sync when changing directories
 - **GNOME Integration** — Follows GNOME Human Interface Guidelines with native libadwaita look
