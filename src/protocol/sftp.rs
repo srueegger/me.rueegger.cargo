@@ -218,7 +218,7 @@ impl Protocol for SftpProtocol {
                     is_dir: metadata.is_dir(),
                     size: metadata.size.unwrap_or(0),
                     modified: metadata.mtime.map(|t| t as i64),
-                    permissions: metadata.permissions.map(|p| format!("{:o}", p)),
+                    permissions: metadata.permissions.map(|p| format!("{:o}", p & 0o7777)),
                     owner: metadata.uid.map(|u| u.to_string()),
                 }
             })
@@ -403,6 +403,20 @@ impl Protocol for SftpProtocol {
         let sftp = sftp.lock().await;
 
         sftp.remove_dir(path)
+            .await
+            .map_err(|e| ProtocolError::FileOperation(e.to_string()))
+    }
+
+    async fn chmod(&self, path: &str, mode: u32) -> Result<()> {
+        let sftp = self.sftp()?;
+        let sftp = sftp.lock().await;
+
+        let mut attrs = sftp
+            .metadata(path)
+            .await
+            .map_err(|e| ProtocolError::FileOperation(e.to_string()))?;
+        attrs.permissions = Some(mode);
+        sftp.set_metadata(path, attrs)
             .await
             .map_err(|e| ProtocolError::FileOperation(e.to_string()))
     }

@@ -382,3 +382,47 @@ msgstr "Cancel"
 #: src/conflict_dialog.rs
 msgid "OK"
 msgstr "OK"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Owner"
+msgstr "Owner"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Group"
+msgstr "Group"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Public"
+msgstr "Public"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Read"
+msgstr "Read"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Write"
+msgstr "Write"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Execute"
+msgstr "Execute"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Numeric value"
+msgstr "Numeric value"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Recurse into subdirectories"
+msgstr "Recurse into subdirectories"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Apply"
+msgstr "Apply"
+
+#: src/window.rs
+msgid "Permissions changed"
+msgstr "Permissions changed"
+
+#: src/window.rs
+msgid "Change permissions failed: %s"
+msgstr "Change permissions failed: %s"

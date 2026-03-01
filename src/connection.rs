@@ -244,6 +244,40 @@ impl ConnectionHandle {
             .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
     }
 
+    /// Change file permissions on the remote server.
+    pub async fn chmod(&self, path: &str, mode: u32) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let path = path.to_string();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx.send(p.chmod(&path, mode).await).await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
+    /// Recursively change permissions on a directory and all its contents.
+    pub async fn chmod_recursive(&self, path: &str, mode: u32) -> Result<(), ProtocolError> {
+        let entries = self.list_dir(path).await?;
+        for entry in entries {
+            let child_path = if path.ends_with('/') {
+                format!("{}{}", path, entry.name)
+            } else {
+                format!("{}/{}", path, entry.name)
+            };
+            if entry.is_dir {
+                Box::pin(self.chmod_recursive(&child_path, mode)).await?;
+            } else {
+                self.chmod(&child_path, mode).await?;
+            }
+        }
+        self.chmod(path, mode).await
+    }
+
     pub fn host_label(&self) -> &str {
         &self.host_label
     }

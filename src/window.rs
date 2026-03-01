@@ -622,6 +622,68 @@ impl CargoWindow {
         });
     }
 
+    fn on_chmod_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let name = selected[0].name();
+        let current_perms = selected[0].permissions();
+        let is_dir = selected[0].is_dir();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(result) = crate::dialogs::show_chmod_dialog(
+                &window,
+                &name,
+                &current_perms,
+                is_dir,
+            )
+            .await
+            else {
+                return;
+            };
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, name)
+            } else {
+                format!("{}/{}", remote_dir, name)
+            };
+
+            let res = if result.recursive {
+                conn.chmod_recursive(&path, result.mode).await
+            } else {
+                conn.chmod(&path, result.mode).await
+            };
+
+            match res {
+                Ok(()) => {
+                    window.imp().right_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Permissions changed"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Change permissions failed: %s")
+                            .replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
     fn on_delete_local(&self) {
         let imp = self.imp();
         let selected = imp.left_panel.selected_items();
@@ -881,12 +943,22 @@ impl CargoWindow {
             }
         ));
 
+        let chmod_remote_action = gio::SimpleAction::new("chmod-remote", None);
+        chmod_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_chmod_remote();
+            }
+        ));
+
         self.add_action(&upload_action);
         self.add_action(&download_action);
         self.add_action(&rename_local_action);
         self.add_action(&rename_remote_action);
         self.add_action(&delete_local_action);
         self.add_action(&delete_remote_action);
+        self.add_action(&chmod_remote_action);
 
         // Left panel: Upload | Rename + Delete
         let left_menu = gio::Menu::new();
@@ -933,6 +1005,9 @@ impl CargoWindow {
         right_section.append(Some(&gettext("Rename")), Some("win.rename-remote"));
         right_section.append(Some(&gettext("Delete")), Some("win.delete-remote"));
         right_menu.append_section(None, &right_section);
+        let perm_section = gio::Menu::new();
+        perm_section.append(Some(&gettext("Permissions")), Some("win.chmod-remote"));
+        right_menu.append_section(None, &perm_section);
         let right_popover = gtk::PopoverMenu::from_model(Some(&right_menu));
         right_popover.set_parent(self.imp().right_panel.column_view().upcast_ref::<gtk::Widget>());
         right_popover.set_has_arrow(false);
@@ -949,10 +1024,13 @@ impl CargoWindow {
             move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
                 panel.select_at_coords(x, y);
-                // Rename only enabled for single selection
-                if let Some(action) = window.lookup_action("rename-remote") {
-                    if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
-                        action.set_enabled(panel.selected_items().len() == 1);
+                // Rename and Permissions only enabled for single selection
+                let single = panel.selected_items().len() == 1;
+                for name in &["rename-remote", "chmod-remote"] {
+                    if let Some(action) = window.lookup_action(name) {
+                        if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
+                            action.set_enabled(single);
+                        }
                     }
                 }
                 right_popover.set_pointing_to(Some(&gdk::Rectangle::new(

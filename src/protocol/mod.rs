@@ -141,6 +141,9 @@ pub trait Protocol: Send + Sync {
     /// Delete a directory on the remote server.
     async fn delete_dir(&self, path: &str) -> Result<()>;
 
+    /// Change file permissions on the remote server.
+    async fn chmod(&self, path: &str, mode: u32) -> Result<()>;
+
     /// Return the protocol type.
     fn protocol_type(&self) -> ProtocolType;
 }
