@@ -14,8 +14,8 @@ mod file_item;
 mod file_panel;
 mod protocol;
 mod site_manager;
-mod transfer_item;
-mod transfer_queue;
+mod transfer;
+mod utils;
 mod window;
 
 use gettextrs::LocaleCategory;

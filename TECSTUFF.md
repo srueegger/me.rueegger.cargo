@@ -191,7 +191,11 @@ me.rueegger.cargo/
 │   ├── me.rueegger.cargo.service.in
 │   ├── icons/
 │   │   ├── me.rueegger.cargo.svg
-│   │   └── me.rueegger.cargo-symbolic.svg
+│   │   ├── me.rueegger.cargo-symbolic.svg
+│   │   └── scalable/actions/       # Custom symbolic icons
+│   │       ├── cargo-ftp-symbolic.svg
+│   │       ├── cargo-ftps-symbolic.svg
+│   │       └── cargo-sftp-symbolic.svg
 │   └── ui/
 │       ├── window.ui
 │       ├── file_panel.ui
@@ -207,25 +211,71 @@ me.rueegger.cargo/
     ├── main.rs
     ├── config.rs
     ├── application.rs
-    ├── window.rs           # Main window, context menus, actions
+    ├── utils.rs            # Shared utilities (format_size, etc.)
     ├── connection.rs       # Async connection handle (tokio ↔ GTK bridge)
     ├── file_item.rs        # GObject wrapper for file list entries
     ├── file_panel.rs       # Dual-pane file browser panel widget
     ├── site_manager.rs     # Site profile persistence (JSON)
-    ├── transfer_item.rs    # GObject wrapper for transfer queue entries
-    ├── transfer_queue.rs   # Transfer queue logic and conflict handling
+    │
+    ├── window/             # Main application window
+    │   ├── mod.rs          # imp struct, TemplateChild fields, core setup
+    │   ├── sidebar.rs      # Sidebar with saved connections
+    │   ├── connection.rs   # Connect/disconnect logic
+    │   ├── transfers.rs    # Transfer buttons, queue UI, enqueue logic
+    │   ├── file_operations.rs  # Rename, delete, chmod
+    │   ├── drag_drop.rs    # Drag-and-drop between panels
+    │   ├── context_menus.rs    # Right-click context menus
+    │   └── sync_nav.rs     # Synchronized navigation
+    │
+    ├── transfer/           # Transfer system
+    │   ├── mod.rs          # Re-exports
+    │   ├── item.rs         # GObject wrapper for transfer queue entries
+    │   └── queue.rs        # Transfer queue logic and conflict handling
+    │
     ├── dialogs/
     │   ├── mod.rs
+    │   ├── chmod_dialog.rs
     │   ├── delete_dialog.rs
     │   ├── overwrite_dialog.rs
     │   ├── rename_dialog.rs
-    │   └── site_manager_dialog.rs
+    │   └── site_manager/   # Site manager dialog
+    │       ├── mod.rs      # imp struct, signals, coordination
+    │       ├── form.rs     # Form population, saving, field handlers
+    │       └── actions.rs  # CRUD, connect, file browser dialogs
+    │
     └── protocol/
         ├── mod.rs          # Protocol trait + types + factory
         ├── error.rs        # Unified error types
         ├── ftp.rs          # FTP/FTPS via suppaftp
         └── sftp.rs         # SFTP via russh + russh-sftp
 ```
+
+### Module Splitting Convention
+
+Large widgets are split into a directory with submodules. Each submodule uses
+multiple `impl` blocks on the same type:
+
+```rust
+// In window/transfers.rs
+use gtk::{glib, prelude::*, subclass::prelude::*};
+use super::CargoWindow;
+
+impl CargoWindow {
+    pub(crate) fn on_upload_clicked(&self) { /* ... */ }
+}
+```
+
+Key rules:
+- `mod.rs` contains the `mod imp { ... }` block with all `TemplateChild` fields
+- Submodules import `subclass::prelude::*` for access to `.imp()`
+- Submodules import `adw::prelude::*` when using libadwaita methods
+- Visibility: `pub(crate)` for methods called from other modules, `pub(super)` for internal helpers
+
+### Custom Icons
+
+Protocol-specific icons are bundled as GResources in `data/icons/scalable/actions/`.
+They follow the `cargo-*-symbolic.svg` naming convention and are registered via
+`icon_theme.add_resource_path()` in `application.rs`.
 
 ## Dependency Policy
 

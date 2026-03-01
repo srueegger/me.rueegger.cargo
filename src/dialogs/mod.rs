@@ -10,7 +10,7 @@ mod chmod_dialog;
 mod delete_dialog;
 mod overwrite_dialog;
 mod rename_dialog;
-pub mod site_manager_dialog;
+pub mod site_manager;
 
 pub use chmod_dialog::*;
 pub use delete_dialog::*;
