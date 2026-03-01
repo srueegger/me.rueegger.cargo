@@ -1,4 +1,4 @@
-use gtk::{prelude::*, subclass::prelude::*};
+use gtk::{glib, prelude::*, subclass::prelude::*};
 use libadwaita as adw;
 
 use gettextrs::gettext;
@@ -82,5 +82,16 @@ impl CargoWindow {
                 }
                 imp.syncing.set(false);
             }));
+    }
+
+    pub(crate) fn setup_refresh_button(&self) {
+        self.imp().refresh_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                window.imp().left_panel.reload();
+                window.imp().right_panel.reload();
+            }
+        ));
     }
 }

@@ -70,6 +70,8 @@ mod imp {
         #[template_child]
         pub sync_nav_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub refresh_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub split_view: TemplateChild<adw::OverlaySplitView>,
         #[template_child]
         pub sidebar_button: TemplateChild<gtk::ToggleButton>,
@@ -128,6 +130,7 @@ mod imp {
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
             obj.setup_sync_navigation();
+            obj.setup_refresh_button();
             obj.setup_drag_and_drop();
             obj.setup_context_menus();
         }

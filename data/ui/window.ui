@@ -104,9 +104,15 @@
                 </child>
                 <child type="start">
                   <object class="GtkToggleButton" id="sync_nav_button">
-                    <property name="icon-name">emblem-synchronizing-symbolic</property>
+                    <property name="icon-name">media-playlist-consecutive-symbolic</property>
                     <property name="tooltip-text" translatable="yes">Synchronized Browsing</property>
                     <property name="sensitive">false</property>
+                  </object>
+                </child>
+                <child type="start">
+                  <object class="GtkButton" id="refresh_button">
+                    <property name="icon-name">view-refresh-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Refresh</property>
                   </object>
                 </child>
               </object>
