@@ -117,6 +117,23 @@ flatpak-builder --user --install --force-clean _flatpak me.rueegger.cargo.yml
 flatpak run me.rueegger.cargo
 ```
 
+### Releasing
+
+Use the release script to bump the version across all files:
+
+```bash
+./scripts/release.sh <version> "<changelog description>"
+```
+
+Example:
+```bash
+./scripts/release.sh 0.5.0 "Add sidebar with quick-connect and refresh button"
+```
+
+The script updates: `Cargo.toml`, `meson.build`, `po/en.po`, `po/de.po`,
+and adds a new `<release>` entry to `data/me.rueegger.cargo.metainfo.xml.in`
+with today's date. Review changes with `git diff` before committing.
+
 ### Publishing
 
 Use the publish script from the flatpak repository:

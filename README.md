@@ -63,6 +63,20 @@ meson compile -C build
 meson install -C build
 ```
 
+## Contributing
+
+### Releasing a New Version
+
+Use the release script to bump the version across all project files:
+
+```bash
+./scripts/release.sh <version> "<changelog description>"
+```
+
+This updates `Cargo.toml`, `meson.build`, translation files, and adds a
+changelog entry to the AppStream metainfo. See [TECSTUFF.md](TECSTUFF.md)
+for full technical documentation.
+
 ## Acknowledgments
 
 - [suppaftp](https://github.com/veeso/suppaftp) — Super FTP/FTPS client library for Rust, powering our FTP/FTPS protocol support

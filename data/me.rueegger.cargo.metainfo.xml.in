@@ -38,6 +38,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.5.0" date="2026-03-01">
+      <description>
+        <p>Add sidebar with quick-connect, refresh button, custom protocol icons, and reorganize codebase</p>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-03-01">
       <description>
         <p>Add right-click context menu for uploading and downloading files.</p>
