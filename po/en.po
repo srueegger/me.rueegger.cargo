@@ -306,6 +306,18 @@ msgid "Skipped"
 msgstr "Skipped"
 
 #: src/window.rs
+msgid "Rename"
+msgstr "Rename"
+
+#: src/window.rs
+msgid "Renamed successfully"
+msgstr "Renamed successfully"
+
+#: src/window.rs
+msgid "Rename failed: %s"
+msgstr "Rename failed: %s"
+
+#: src/window.rs
 msgid "Delete"
 msgstr "Delete"
 

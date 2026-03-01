@@ -227,6 +227,23 @@ impl ConnectionHandle {
         self.delete_dir(path).await
     }
 
+    /// Rename a file or directory on the remote server.
+    pub async fn rename(&self, from: &str, to: &str) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let from = from.to_string();
+        let to = to.to_string();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx.send(p.rename(&from, &to).await).await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
     pub fn host_label(&self) -> &str {
         &self.host_label
     }

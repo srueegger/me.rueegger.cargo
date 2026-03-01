@@ -352,6 +352,18 @@ msgstr "Übersprungen"
 #
 
 #: src/window.rs
+msgid "Rename"
+msgstr "Umbenennen"
+
+#: src/window.rs
+msgid "Renamed successfully"
+msgstr "Erfolgreich umbenannt"
+
+#: src/window.rs
+msgid "Rename failed: %s"
+msgstr "Umbenennen fehlgeschlagen: %s"
+
+#: src/window.rs
 msgid "Delete"
 msgstr "Löschen"
 

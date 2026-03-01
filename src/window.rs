@@ -508,6 +508,94 @@ impl CargoWindow {
         );
     }
 
+    fn on_rename_local(&self) {
+        let imp = self.imp();
+        let selected = imp.left_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let old_name = selected[0].name();
+        let base_path = imp.left_panel.current_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(new_name) = crate::conflict_dialog::show_rename_dialog(&window, &old_name).await else {
+                return;
+            };
+
+            let old_path = base_path.join(&old_name);
+            let new_path = base_path.join(&new_name);
+
+            match std::fs::rename(&old_path, &new_path) {
+                Ok(()) => {
+                    window.imp().left_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Renamed successfully"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Rename failed: %s").replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
+    fn on_rename_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let old_name = selected[0].name();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(new_name) = crate::conflict_dialog::show_rename_dialog(&window, &old_name).await else {
+                return;
+            };
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let old_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, old_name)
+            } else {
+                format!("{}/{}", remote_dir, old_name)
+            };
+            let new_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, new_name)
+            } else {
+                format!("{}/{}", remote_dir, new_name)
+            };
+
+            match conn.rename(&old_path, &new_path).await {
+                Ok(()) => {
+                    window.imp().right_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Renamed successfully"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Rename failed: %s").replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
     fn on_delete_local(&self) {
         let imp = self.imp();
         let selected = imp.left_panel.selected_items();
@@ -731,6 +819,24 @@ impl CargoWindow {
             }
         ));
 
+        let rename_local_action = gio::SimpleAction::new("rename-local", None);
+        rename_local_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_rename_local();
+            }
+        ));
+
+        let rename_remote_action = gio::SimpleAction::new("rename-remote", None);
+        rename_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_rename_remote();
+            }
+        ));
+
         let delete_local_action = gio::SimpleAction::new("delete-local", None);
         delete_local_action.connect_activate(glib::clone!(
             #[weak(rename_to = window)]
@@ -751,13 +857,16 @@ impl CargoWindow {
 
         self.add_action(&upload_action);
         self.add_action(&download_action);
+        self.add_action(&rename_local_action);
+        self.add_action(&rename_remote_action);
         self.add_action(&delete_local_action);
         self.add_action(&delete_remote_action);
 
-        // Left panel: Upload + Delete context menu
+        // Left panel: Upload | Rename + Delete
         let left_menu = gio::Menu::new();
         left_menu.append(Some(&gettext("Upload")), Some("win.upload-selected"));
         let left_section = gio::Menu::new();
+        left_section.append(Some(&gettext("Rename")), Some("win.rename-local"));
         left_section.append(Some(&gettext("Delete")), Some("win.delete-local"));
         left_menu.append_section(None, &left_section);
         let left_popover = gtk::PopoverMenu::from_model(Some(&left_menu));
@@ -771,9 +880,17 @@ impl CargoWindow {
             left_popover,
             #[weak(rename_to = panel)]
             self.imp().left_panel,
+            #[weak(rename_to = window)]
+            self,
             move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
                 panel.select_at_coords(x, y);
+                // Rename only enabled for single selection
+                if let Some(action) = window.lookup_action("rename-local") {
+                    if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
+                        action.set_enabled(panel.selected_items().len() == 1);
+                    }
+                }
                 left_popover.set_pointing_to(Some(&gdk::Rectangle::new(
                     x as i32, y as i32, 1, 1,
                 )));
@@ -782,10 +899,11 @@ impl CargoWindow {
         ));
         self.imp().left_panel.column_view().add_controller(left_gesture);
 
-        // Right panel: Download + Delete context menu
+        // Right panel: Download | Rename + Delete
         let right_menu = gio::Menu::new();
         right_menu.append(Some(&gettext("Download")), Some("win.download-selected"));
         let right_section = gio::Menu::new();
+        right_section.append(Some(&gettext("Rename")), Some("win.rename-remote"));
         right_section.append(Some(&gettext("Delete")), Some("win.delete-remote"));
         right_menu.append_section(None, &right_section);
         let right_popover = gtk::PopoverMenu::from_model(Some(&right_menu));
@@ -799,9 +917,17 @@ impl CargoWindow {
             right_popover,
             #[weak(rename_to = panel)]
             self.imp().right_panel,
+            #[weak(rename_to = window)]
+            self,
             move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
                 panel.select_at_coords(x, y);
+                // Rename only enabled for single selection
+                if let Some(action) = window.lookup_action("rename-remote") {
+                    if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
+                        action.set_enabled(panel.selected_items().len() == 1);
+                    }
+                }
                 right_popover.set_pointing_to(Some(&gdk::Rectangle::new(
                     x as i32, y as i32, 1, 1,
                 )));
