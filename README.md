@@ -2,6 +2,14 @@
 
 A dual-pane file transfer application for GNOME, built with GTK4 and libadwaita.
 
+## Screenshots
+
+| Light | Dark |
+|-------|------|
+| ![App Overview](screenshots/app-overview.png) | ![App Overview Dark](screenshots/app-overview-dark.png) |
+| ![Site Manager](screenshots/site-manager.png) | ![Site Manager Dark](screenshots/site-manager-dark.png) |
+| ![Overwrite Dialog](screenshots/overwrite-dialog.png) | ![Overwrite Dialog Dark](screenshots/overwrite-dialog-dark.png) |
+
 ## Features
 
 - **Dual-pane file browser** — Browse local and remote files side by side
