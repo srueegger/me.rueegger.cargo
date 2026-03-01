@@ -114,6 +114,18 @@ cd ~/Projects/flatpak.rueegger.dev
 ./publish.sh cargo
 ```
 
+## GitHub Pages
+
+The project has a product landing page served via GitHub Pages from the `docs/` directory on `main`.
+
+- **URL:** https://srueegger.github.io/me.rueegger.cargo/
+- **Source:** `docs/index.html` (single-file, no build step)
+- **Screenshots:** `docs/screenshots/` (copies of `screenshots/`)
+- **Favicon:** `docs/favicon.svg` (copy of app icon)
+- **Languages:** Automatic detection (DE/EN) via JavaScript, same approach as flatpak.rueegger.dev
+
+When updating screenshots, remember to copy them into `docs/screenshots/` as well.
+
 ## i18n / Translations
 
 **Every user-visible string must be translatable.** This is a hard requirement.
