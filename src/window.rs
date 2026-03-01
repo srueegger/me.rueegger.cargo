@@ -297,9 +297,9 @@ impl CargoWindow {
 
             // Show connected indicator
             if connected_id.as_deref() == Some(&site.id) {
-                let connected_icon = gtk::Image::from_icon_name("object-select-symbolic");
-                connected_icon.add_css_class("success");
-                row_box.append(&connected_icon);
+                let dot = gtk::Label::new(Some("\u{25CF}"));
+                dot.add_css_class("success");
+                row_box.append(&dot);
             }
 
             let row = gtk::ListBoxRow::new();
