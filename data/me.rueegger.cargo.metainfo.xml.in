@@ -38,6 +38,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.3.0" date="2026-03-01">
+      <description>
+        <p>Add file overwrite confirmation dialog with options to overwrite, skip, rename, or conditionally overwrite based on size or date.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-02-27">
       <description>
         <p>Add drag and drop file transfer between panels.</p>
