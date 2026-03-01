@@ -7,8 +7,8 @@ authors = ["Samuel Rüegger"]
 description = "A dual-pane file transfer application for GNOME"
 
 [dependencies]
-gtk = { version = "0.10", package = "gtk4", features = ["v4_16"] }
-libadwaita = { version = "0.8", features = ["v1_6"] }
+gtk = { version = "0.10", package = "gtk4", features = ["v4_20"] }
+libadwaita = { version = "0.8", features = ["v1_8"] }
 glib = "0.21"
 gio = "0.21"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }

@@ -69,7 +69,7 @@ mod imp {
         pub settings: OnceCell<gio::Settings>,
 
         // Remote mode state
-        pub mode: RefCell<PanelMode>,
+        pub(crate) mode: RefCell<PanelMode>,
         pub remote_path: RefCell<String>,
 
         // Sync navigation callback
