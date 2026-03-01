@@ -40,13 +40,19 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
 
+            let display = gdk::Display::default().unwrap();
+
             let provider = gtk::CssProvider::new();
             provider.load_from_resource("/me/rueegger/cargo/style.css");
             gtk::style_context_add_provider_for_display(
-                &gdk::Display::default().unwrap(),
+                &display,
                 &provider,
                 gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
+
+            // Register app-bundled icons (protocol icons etc.)
+            let icon_theme = gtk::IconTheme::for_display(&display);
+            icon_theme.add_resource_path("/me/rueegger/cargo/icons");
         }
 
         fn activate(&self) {

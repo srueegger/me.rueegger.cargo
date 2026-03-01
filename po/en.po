@@ -426,3 +426,19 @@ msgstr "Permissions changed"
 #: src/window.rs
 msgid "Change permissions failed: %s"
 msgstr "Change permissions failed: %s"
+
+#: data/ui/window.ui
+msgid "Toggle Sidebar"
+msgstr "Toggle Sidebar"
+
+#: src/window.rs
+msgid "Connect to %s"
+msgstr "Connect to %s"
+
+#: src/window.rs
+msgid "Enter password"
+msgstr "Enter password"
+
+#: src/window.rs
+msgid "Enter passphrase for key"
+msgstr "Enter passphrase for key"

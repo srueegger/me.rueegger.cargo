@@ -476,3 +476,23 @@ msgstr "Berechtigungen geändert"
 #: src/window.rs
 msgid "Change permissions failed: %s"
 msgstr "Berechtigungen ändern fehlgeschlagen: %s"
+
+#
+# ── sidebar ──────────────────────────────────────────────────
+#
+
+#: data/ui/window.ui
+msgid "Toggle Sidebar"
+msgstr "Seitenleiste ein-/ausblenden"
+
+#: src/window.rs
+msgid "Connect to %s"
+msgstr "Verbinden mit %s"
+
+#: src/window.rs
+msgid "Enter password"
+msgstr "Passwort eingeben"
+
+#: src/window.rs
+msgid "Enter passphrase for key"
+msgstr "Passphrase für Schlüssel eingeben"

@@ -27,5 +27,10 @@
       <summary>Whether to synchronize directory navigation between panels</summary>
     </key>
 
+    <key name="show-sidebar" type="b">
+      <default>true</default>
+      <summary>Whether to show the sidebar</summary>
+    </key>
+
   </schema>
 </schemalist>

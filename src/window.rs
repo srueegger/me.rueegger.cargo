@@ -18,7 +18,7 @@ use gettextrs::gettext;
 use crate::config::APP_ID;
 use crate::connection::ConnectionHandle;
 use crate::file_panel::{PanelMode, SyncEvent};
-use crate::site_manager::SiteProfile;
+use crate::site_manager::{AuthMethodType, SiteProfile, SiteStore};
 use crate::transfer_item::*;
 use crate::transfer_queue::TransferQueue;
 
@@ -53,7 +53,7 @@ mod imp {
         #[template_child]
         pub hidden_files_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
-        pub connect_button: TemplateChild<gtk::Button>,
+        pub new_site_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub upload_button: TemplateChild<gtk::Button>,
         #[template_child]
@@ -66,9 +66,18 @@ mod imp {
         pub clear_transfers_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub sync_nav_button: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub split_view: TemplateChild<adw::OverlaySplitView>,
+        #[template_child]
+        pub sidebar_button: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub sidebar_list: TemplateChild<gtk::ListBox>,
+        #[template_child]
+        pub sidebar_separator: TemplateChild<gtk::Separator>,
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
         pub syncing: Cell<bool>,
+        pub connected_site_id: RefCell<Option<String>>,
         pub left_context_menu: RefCell<Option<gtk::PopoverMenu>>,
         pub right_context_menu: RefCell<Option<gtk::PopoverMenu>>,
     }
@@ -110,8 +119,9 @@ mod imp {
             let obj = self.obj();
             obj.load_window_state();
             obj.setup_hidden_files_toggle();
+            obj.setup_sidebar();
             obj.setup_paned_position();
-            obj.setup_site_manager_button();
+            obj.setup_site_manager_action();
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
             obj.setup_sync_navigation();
@@ -186,6 +196,180 @@ impl CargoWindow {
             .build();
     }
 
+    fn setup_sidebar(&self) {
+        // Add breakpoint: collapse sidebar when window width < 650px
+        let breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+            adw::BreakpointConditionLengthType::MaxWidth,
+            650.0,
+            adw::LengthUnit::Px,
+        ));
+        breakpoint.add_setter(&*self.imp().split_view, "collapsed", Some(&true.to_value()));
+        self.add_breakpoint(breakpoint);
+
+        // Sidebar button + separator only visible when collapsed (narrow window)
+        let collapsed = self.imp().split_view.is_collapsed();
+        self.imp().sidebar_button.set_visible(collapsed);
+        self.imp().sidebar_separator.set_visible(collapsed);
+
+        // Toggle button controls overlay sidebar when collapsed
+        self.imp()
+            .sidebar_button
+            .bind_property("active", &*self.imp().split_view, "show-sidebar")
+            .bidirectional()
+            .sync_create()
+            .build();
+
+        // When collapsed state changes, show/hide the toggle button
+        // and auto-hide the sidebar overlay
+        self.imp().split_view.connect_collapsed_notify(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |split_view| {
+                let collapsed = split_view.is_collapsed();
+                window.imp().sidebar_button.set_visible(collapsed);
+                window.imp().sidebar_separator.set_visible(collapsed);
+                if collapsed {
+                    split_view.set_show_sidebar(false);
+                }
+            }
+        ));
+
+        // New Site button → open Site Manager
+        self.imp().new_site_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                window.open_site_manager();
+            }
+        ));
+
+        // Populate sidebar with saved sites
+        self.populate_sidebar();
+
+        // Connect row activation → connect or disconnect
+        self.imp().sidebar_list.connect_row_activated(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, row| {
+                let site_id = row.widget_name().to_string();
+                let connected_id = window.imp().connected_site_id.borrow().clone();
+                if connected_id.as_deref() == Some(site_id.as_str()) {
+                    // Already connected → disconnect
+                    window.disconnect();
+                } else {
+                    window.initiate_sidebar_connect(&site_id);
+                }
+            }
+        ));
+    }
+
+    fn populate_sidebar(&self) {
+        let sidebar = &*self.imp().sidebar_list;
+
+        // Remove all existing rows
+        while let Some(row) = sidebar.row_at_index(0) {
+            sidebar.remove(&row);
+        }
+
+        let store = SiteStore::load();
+        let connected_id = self.imp().connected_site_id.borrow().clone();
+
+        for site in &store.sites {
+            let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            row_box.set_margin_start(4);
+            row_box.set_margin_end(4);
+            row_box.set_margin_top(2);
+            row_box.set_margin_bottom(2);
+
+            let icon_name = match site.protocol {
+                crate::site_manager::SerializableProtocol::Ftp => "cargo-ftp-symbolic",
+                crate::site_manager::SerializableProtocol::Ftps => "cargo-ftps-symbolic",
+                crate::site_manager::SerializableProtocol::Sftp => "cargo-sftp-symbolic",
+            };
+            let icon = gtk::Image::from_icon_name(icon_name);
+            row_box.append(&icon);
+
+            let label = gtk::Label::new(Some(&site.name));
+            label.set_xalign(0.0);
+            label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+            label.set_hexpand(true);
+            row_box.append(&label);
+
+            // Show connected indicator
+            if connected_id.as_deref() == Some(&site.id) {
+                let connected_icon = gtk::Image::from_icon_name("object-select-symbolic");
+                connected_icon.add_css_class("success");
+                row_box.append(&connected_icon);
+            }
+
+            let row = gtk::ListBoxRow::new();
+            row.set_child(Some(&row_box));
+            row.set_widget_name(&site.id);
+            sidebar.append(&row);
+        }
+    }
+
+    fn initiate_sidebar_connect(&self, site_id: &str) {
+        let store = SiteStore::load();
+        let Some(profile) = store.find(site_id) else {
+            return;
+        };
+        let profile = profile.clone();
+
+        match &profile.auth_method {
+            AuthMethodType::Agent => {
+                self.initiate_connection(profile, None);
+            }
+            AuthMethodType::Password | AuthMethodType::KeyFile { .. } => {
+                let heading = gettext("Connect to %s").replace("%s", &profile.name);
+                let body = match &profile.auth_method {
+                    AuthMethodType::KeyFile { .. } => gettext("Enter passphrase for key"),
+                    _ => gettext("Enter password"),
+                };
+
+                let dialog = adw::AlertDialog::builder()
+                    .heading(heading)
+                    .body(body)
+                    .build();
+
+                let entry = gtk::PasswordEntry::builder()
+                    .show_peek_icon(true)
+                    .build();
+                entry.set_margin_start(12);
+                entry.set_margin_end(12);
+                dialog.set_extra_child(Some(&entry));
+
+                dialog.add_response("cancel", &gettext("Cancel"));
+                dialog.add_response("connect", &gettext("Connect"));
+                dialog.set_response_appearance(
+                    "connect",
+                    adw::ResponseAppearance::Suggested,
+                );
+                dialog.set_default_response(Some("connect"));
+                dialog.set_close_response("cancel");
+
+                let window_weak = self.downgrade();
+                let entry_clone = entry.clone();
+                dialog.connect_response(None, move |_dialog, response| {
+                    if response == "connect" {
+                        let Some(window) = window_weak.upgrade() else {
+                            return;
+                        };
+                        let password = entry_clone.text().to_string();
+                        let pw = if password.is_empty() {
+                            None
+                        } else {
+                            Some(password)
+                        };
+                        window.initiate_connection(profile.clone(), pw);
+                    }
+                });
+
+                dialog.present(Some(self));
+            }
+        }
+    }
+
     fn setup_paned_position(&self) {
         self.imp().paned.set_position(600);
     }
@@ -202,6 +386,8 @@ impl CargoWindow {
             #[weak(rename_to = window)]
             self,
             move |dialog| {
+                // Refresh sidebar (sites may have been added/removed/edited)
+                window.populate_sidebar();
                 if let Some((profile, password)) = dialog.take_connect_request() {
                     window.initiate_connection(profile, password);
                 }
@@ -210,26 +396,16 @@ impl CargoWindow {
         dialog.present(Some(self));
     }
 
-    fn setup_site_manager_button(&self) {
-        // Toolbar button: toggles between Site Manager / Disconnect
-        self.imp().connect_button.connect_clicked(glib::clone!(
-            #[weak(rename_to = window)]
-            self,
-            move |_| {
-                if window.imp().right_panel.is_remote() {
-                    // Disconnect
-                    window.imp().right_panel.set_local_mode();
-                    window.imp().connect_button.set_icon_name("network-server-symbolic");
-                    window.imp().connect_button.set_tooltip_text(Some(&gettext("Site Manager")));
-                    window.set_transfer_buttons_sensitive(false);
-                    let toast = adw::Toast::new(&gettext("Disconnected"));
-                    window.imp().toast_overlay.add_toast(toast);
-                } else {
-                    window.open_site_manager();
-                }
-            }
-        ));
+    fn disconnect(&self) {
+        self.imp().right_panel.set_local_mode();
+        self.set_transfer_buttons_sensitive(false);
+        *self.imp().connected_site_id.borrow_mut() = None;
+        self.populate_sidebar();
+        let toast = adw::Toast::new(&gettext("Disconnected"));
+        self.imp().toast_overlay.add_toast(toast);
+    }
 
+    fn setup_site_manager_action(&self) {
         // Menu action + keyboard shortcut (Ctrl+S)
         let sm_action = gio::SimpleAction::new("site-manager", None);
         sm_action.connect_activate(glib::clone!(
@@ -1121,6 +1297,7 @@ impl CargoWindow {
 
     fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {
         let config = profile.to_connection_config(password);
+        let site_id = profile.id.clone();
         let local_dir = profile.local_dir.clone();
         let remote_dir = profile.remote_dir.clone();
         let sync_browsing = profile.sync_browsing;
@@ -1145,15 +1322,11 @@ impl CargoWindow {
                         conn,
                         remote_dir.as_deref(),
                     );
-                    window
-                        .imp()
-                        .connect_button
-                        .set_icon_name("network-offline-symbolic");
-                    window
-                        .imp()
-                        .connect_button
-                        .set_tooltip_text(Some(&gettext("Disconnect")));
                     window.set_transfer_buttons_sensitive(true);
+
+                    // Track connected site and update sidebar
+                    *window.imp().connected_site_id.borrow_mut() = Some(site_id);
+                    window.populate_sidebar();
 
                     // Apply profile directory settings
                     if let Some(ref dir) = local_dir {
