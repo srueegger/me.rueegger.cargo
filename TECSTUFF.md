@@ -39,6 +39,18 @@ All GTK widgets use the standard gtk-rs subclassing pattern:
 2. `glib::wrapper!` macro for the public type
 3. `CompositeTemplate` for UI-bound widgets
 
+### Context Menus (PopoverMenu)
+
+When adding a `PopoverMenu` via `set_parent()` on a widget (e.g. `ColumnView`), you **must**:
+
+1. Store the `PopoverMenu` in the parent widget's `imp` struct (e.g. `RefCell<Option<gtk::PopoverMenu>>`)
+2. Call `popover.unparent()` in the `dispose()` method of the parent widget
+
+Without this, GTK will emit warnings on shutdown:
+`Finalizing GtkColumnView, but it still has children left: GtkPopoverMenu`
+
+See `CargoWindow` for the reference implementation.
+
 ### Async Model
 
 - **Tokio Runtime**: Static runtime for network I/O (suppaftp, russh)

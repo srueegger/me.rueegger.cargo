@@ -35,7 +35,7 @@ enum TransferDirection {
 
 mod imp {
     use super::*;
-    use std::cell::{Cell, OnceCell};
+    use std::cell::{Cell, OnceCell, RefCell};
 
     #[derive(CompositeTemplate, Default)]
     #[template(resource = "/me/rueegger/cargo/ui/window.ui")]
@@ -69,6 +69,8 @@ mod imp {
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
         pub syncing: Cell<bool>,
+        pub left_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub right_context_menu: RefCell<Option<gtk::PopoverMenu>>,
     }
 
     #[glib::object_subclass]
@@ -91,6 +93,15 @@ mod imp {
     }
 
     impl ObjectImpl for CargoWindow {
+        fn dispose(&self) {
+            if let Some(popover) = self.left_context_menu.take() {
+                popover.unparent();
+            }
+            if let Some(popover) = self.right_context_menu.take() {
+                popover.unparent();
+            }
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
             self.transfer_queue
@@ -913,6 +924,7 @@ impl CargoWindow {
             }
         ));
         self.imp().left_panel.column_view().add_controller(left_gesture);
+        self.imp().left_context_menu.replace(Some(left_popover));
 
         // Right panel: Download | Rename + Delete
         let right_menu = gio::Menu::new();
@@ -950,6 +962,7 @@ impl CargoWindow {
             }
         ));
         self.imp().right_panel.column_view().add_controller(right_gesture);
+        self.imp().right_context_menu.replace(Some(right_popover));
     }
 
     fn setup_sync_navigation(&self) {
