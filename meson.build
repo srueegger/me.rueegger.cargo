@@ -1,6 +1,6 @@
 project('cargo-app', 'rust',
-  version: '0.3.0',
-  meson_version: '>= 0.59.0',
+  version: '0.4.0',
+  meson_version: '>= 1.1.0',
   license: 'GPL-2.0-only',
 )
 
@@ -9,10 +9,10 @@ gnome = import('gnome')
 
 base_id = 'me.rueegger.cargo'
 
-dependency('glib-2.0', version: '>= 2.76')
-dependency('gio-2.0', version: '>= 2.76')
-dependency('gtk4', version: '>= 4.16')
-dependency('libadwaita-1', version: '>= 1.6')
+dependency('glib-2.0', version: '>= 2.86')
+dependency('gio-2.0', version: '>= 2.86')
+dependency('gtk4', version: '>= 4.20')
+dependency('libadwaita-1', version: '>= 1.8')
 
 profile = get_option('profile')
 if profile == 'release'

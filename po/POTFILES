@@ -8,3 +8,4 @@ src/window.rs
 src/file_panel.rs
 src/site_manager_dialog.rs
 src/transfer_item.rs
+src/dialogs/chmod_dialog.rs

@@ -35,7 +35,7 @@ enum TransferDirection {
 
 mod imp {
     use super::*;
-    use std::cell::{Cell, OnceCell};
+    use std::cell::{Cell, OnceCell, RefCell};
 
     #[derive(CompositeTemplate, Default)]
     #[template(resource = "/me/rueegger/cargo/ui/window.ui")]
@@ -69,6 +69,8 @@ mod imp {
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
         pub syncing: Cell<bool>,
+        pub left_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub right_context_menu: RefCell<Option<gtk::PopoverMenu>>,
     }
 
     #[glib::object_subclass]
@@ -80,7 +82,7 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             crate::file_item::FileItem::ensure_type();
             crate::file_panel::FilePanel::ensure_type();
-            crate::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
+            crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
             TransferItem::ensure_type();
             klass.bind_template();
         }
@@ -91,6 +93,15 @@ mod imp {
     }
 
     impl ObjectImpl for CargoWindow {
+        fn dispose(&self) {
+            if let Some(popover) = self.left_context_menu.take() {
+                popover.unparent();
+            }
+            if let Some(popover) = self.right_context_menu.take() {
+                popover.unparent();
+            }
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
             self.transfer_queue
@@ -105,6 +116,7 @@ mod imp {
             obj.setup_transfer_queue_ui();
             obj.setup_sync_navigation();
             obj.setup_drag_and_drop();
+            obj.setup_context_menus();
         }
     }
 
@@ -184,7 +196,22 @@ impl CargoWindow {
         self.imp().sync_nav_button.set_sensitive(sensitive);
     }
 
+    fn open_site_manager(&self) {
+        let dialog = crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::new();
+        dialog.connect_closed(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |dialog| {
+                if let Some((profile, password)) = dialog.take_connect_request() {
+                    window.initiate_connection(profile, password);
+                }
+            }
+        ));
+        dialog.present(Some(self));
+    }
+
     fn setup_site_manager_button(&self) {
+        // Toolbar button: toggles between Site Manager / Disconnect
         self.imp().connect_button.connect_clicked(glib::clone!(
             #[weak(rename_to = window)]
             self,
@@ -198,21 +225,21 @@ impl CargoWindow {
                     let toast = adw::Toast::new(&gettext("Disconnected"));
                     window.imp().toast_overlay.add_toast(toast);
                 } else {
-                    // Open Site Manager
-                    let dialog = crate::site_manager_dialog::CargoSiteManagerDialog::new();
-                    dialog.connect_closed(glib::clone!(
-                        #[weak]
-                        window,
-                        move |dialog| {
-                            if let Some((profile, password)) = dialog.take_connect_request() {
-                                window.initiate_connection(profile, password);
-                            }
-                        }
-                    ));
-                    dialog.present(Some(&window));
+                    window.open_site_manager();
                 }
             }
         ));
+
+        // Menu action + keyboard shortcut (Ctrl+S)
+        let sm_action = gio::SimpleAction::new("site-manager", None);
+        sm_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.open_site_manager();
+            }
+        ));
+        self.add_action(&sm_action);
     }
 
     fn setup_transfer_buttons(&self) {
@@ -507,6 +534,262 @@ impl CargoWindow {
         );
     }
 
+    fn on_rename_local(&self) {
+        let imp = self.imp();
+        let selected = imp.left_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let old_name = selected[0].name();
+        let base_path = imp.left_panel.current_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(new_name) = crate::dialogs::show_rename_dialog(&window, &old_name).await else {
+                return;
+            };
+
+            let old_path = base_path.join(&old_name);
+            let new_path = base_path.join(&new_name);
+
+            match std::fs::rename(&old_path, &new_path) {
+                Ok(()) => {
+                    window.imp().left_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Renamed successfully"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Rename failed: %s").replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
+    fn on_rename_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let old_name = selected[0].name();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(new_name) = crate::dialogs::show_rename_dialog(&window, &old_name).await else {
+                return;
+            };
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let old_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, old_name)
+            } else {
+                format!("{}/{}", remote_dir, old_name)
+            };
+            let new_path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, new_name)
+            } else {
+                format!("{}/{}", remote_dir, new_name)
+            };
+
+            match conn.rename(&old_path, &new_path).await {
+                Ok(()) => {
+                    window.imp().right_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Renamed successfully"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Rename failed: %s").replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
+    fn on_chmod_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.len() != 1 {
+            return;
+        }
+
+        let name = selected[0].name();
+        let current_perms = selected[0].permissions();
+        let is_dir = selected[0].is_dir();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            let Some(result) = crate::dialogs::show_chmod_dialog(
+                &window,
+                &name,
+                &current_perms,
+                is_dir,
+            )
+            .await
+            else {
+                return;
+            };
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let path = if remote_dir.ends_with('/') {
+                format!("{}{}", remote_dir, name)
+            } else {
+                format!("{}/{}", remote_dir, name)
+            };
+
+            let res = if result.recursive {
+                conn.chmod_recursive(&path, result.mode).await
+            } else {
+                conn.chmod(&path, result.mode).await
+            };
+
+            match res {
+                Ok(()) => {
+                    window.imp().right_panel.reload();
+                    let toast = adw::Toast::new(&gettext("Permissions changed"));
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+                Err(e) => {
+                    let toast = adw::Toast::new(
+                        &gettext("Change permissions failed: %s")
+                            .replace("%s", &e.to_string()),
+                    );
+                    window.imp().toast_overlay.add_toast(toast);
+                }
+            }
+        });
+    }
+
+    fn on_delete_local(&self) {
+        let imp = self.imp();
+        let selected = imp.left_panel.selected_items();
+        if selected.is_empty() {
+            return;
+        }
+
+        let names: Vec<String> = selected.iter().map(|i| i.name()).collect();
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
+        let base_path = imp.left_panel.current_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            if !crate::dialogs::show_delete_confirmation(&window, &names).await {
+                return;
+            }
+
+            let mut errors: Vec<String> = Vec::new();
+            for (name, is_dir) in &items {
+                let path = base_path.join(name);
+                let result = if *is_dir {
+                    std::fs::remove_dir_all(&path)
+                } else {
+                    std::fs::remove_file(&path)
+                };
+                if let Err(e) = result {
+                    errors.push(format!("{}: {}", name, e));
+                }
+            }
+
+            window.imp().left_panel.reload();
+
+            let toast = if errors.is_empty() {
+                adw::Toast::new(&gettext("Deleted successfully"))
+            } else {
+                adw::Toast::new(
+                    &gettext("Delete failed: %s").replace("%s", &errors.join(", ")),
+                )
+            };
+            window.imp().toast_overlay.add_toast(toast);
+        });
+    }
+
+    fn on_delete_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.is_empty() {
+            return;
+        }
+
+        let names: Vec<String> = selected.iter().map(|i| i.name()).collect();
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            if !crate::dialogs::show_delete_confirmation(&window, &names).await {
+                return;
+            }
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let mut errors: Vec<String> = Vec::new();
+            for (name, is_dir) in &items {
+                let remote_path = if remote_dir.ends_with('/') {
+                    format!("{}{}", remote_dir, name)
+                } else {
+                    format!("{}/{}", remote_dir, name)
+                };
+                let result = if *is_dir {
+                    conn.delete_recursive(&remote_path).await
+                } else {
+                    conn.delete(&remote_path).await
+                };
+                if let Err(e) = result {
+                    errors.push(format!("{}: {}", name, e));
+                }
+            }
+
+            window.imp().right_panel.reload();
+
+            let toast = if errors.is_empty() {
+                adw::Toast::new(&gettext("Deleted successfully"))
+            } else {
+                adw::Toast::new(
+                    &gettext("Delete failed: %s").replace("%s", &errors.join(", ")),
+                )
+            };
+            window.imp().toast_overlay.add_toast(toast);
+        });
+    }
+
     fn setup_drag_and_drop(&self) {
         let imp = self.imp();
         Self::attach_drag_source(&imp.left_panel, "left");
@@ -602,6 +885,162 @@ impl CargoWindow {
         });
 
         panel.column_view().add_controller(drop_target);
+    }
+
+    fn setup_context_menus(&self) {
+        // Actions
+        let upload_action = gio::SimpleAction::new("upload-selected", None);
+        upload_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_upload_clicked();
+            }
+        ));
+
+        let download_action = gio::SimpleAction::new("download-selected", None);
+        download_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_download_clicked();
+            }
+        ));
+
+        let rename_local_action = gio::SimpleAction::new("rename-local", None);
+        rename_local_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_rename_local();
+            }
+        ));
+
+        let rename_remote_action = gio::SimpleAction::new("rename-remote", None);
+        rename_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_rename_remote();
+            }
+        ));
+
+        let delete_local_action = gio::SimpleAction::new("delete-local", None);
+        delete_local_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_delete_local();
+            }
+        ));
+
+        let delete_remote_action = gio::SimpleAction::new("delete-remote", None);
+        delete_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_delete_remote();
+            }
+        ));
+
+        let chmod_remote_action = gio::SimpleAction::new("chmod-remote", None);
+        chmod_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_chmod_remote();
+            }
+        ));
+
+        self.add_action(&upload_action);
+        self.add_action(&download_action);
+        self.add_action(&rename_local_action);
+        self.add_action(&rename_remote_action);
+        self.add_action(&delete_local_action);
+        self.add_action(&delete_remote_action);
+        self.add_action(&chmod_remote_action);
+
+        // Left panel: Upload | Rename + Delete
+        let left_menu = gio::Menu::new();
+        left_menu.append(Some(&gettext("Upload")), Some("win.upload-selected"));
+        let left_section = gio::Menu::new();
+        left_section.append(Some(&gettext("Rename")), Some("win.rename-local"));
+        left_section.append(Some(&gettext("Delete")), Some("win.delete-local"));
+        left_menu.append_section(None, &left_section);
+        let left_popover = gtk::PopoverMenu::from_model(Some(&left_menu));
+        left_popover.set_parent(self.imp().left_panel.column_view().upcast_ref::<gtk::Widget>());
+        left_popover.set_has_arrow(false);
+
+        let left_gesture = gtk::GestureClick::new();
+        left_gesture.set_button(3);
+        left_gesture.connect_pressed(glib::clone!(
+            #[weak]
+            left_popover,
+            #[weak(rename_to = panel)]
+            self.imp().left_panel,
+            #[weak(rename_to = window)]
+            self,
+            move |gesture, _, x, y| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                panel.select_at_coords(x, y);
+                // Rename only enabled for single selection
+                if let Some(action) = window.lookup_action("rename-local") {
+                    if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
+                        action.set_enabled(panel.selected_items().len() == 1);
+                    }
+                }
+                left_popover.set_pointing_to(Some(&gdk::Rectangle::new(
+                    x as i32, y as i32, 1, 1,
+                )));
+                left_popover.popup();
+            }
+        ));
+        self.imp().left_panel.column_view().add_controller(left_gesture);
+        self.imp().left_context_menu.replace(Some(left_popover));
+
+        // Right panel: Download | Rename + Delete
+        let right_menu = gio::Menu::new();
+        right_menu.append(Some(&gettext("Download")), Some("win.download-selected"));
+        let right_section = gio::Menu::new();
+        right_section.append(Some(&gettext("Rename")), Some("win.rename-remote"));
+        right_section.append(Some(&gettext("Delete")), Some("win.delete-remote"));
+        right_menu.append_section(None, &right_section);
+        let perm_section = gio::Menu::new();
+        perm_section.append(Some(&gettext("Permissions")), Some("win.chmod-remote"));
+        right_menu.append_section(None, &perm_section);
+        let right_popover = gtk::PopoverMenu::from_model(Some(&right_menu));
+        right_popover.set_parent(self.imp().right_panel.column_view().upcast_ref::<gtk::Widget>());
+        right_popover.set_has_arrow(false);
+
+        let right_gesture = gtk::GestureClick::new();
+        right_gesture.set_button(3);
+        right_gesture.connect_pressed(glib::clone!(
+            #[weak]
+            right_popover,
+            #[weak(rename_to = panel)]
+            self.imp().right_panel,
+            #[weak(rename_to = window)]
+            self,
+            move |gesture, _, x, y| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                panel.select_at_coords(x, y);
+                // Rename and Permissions only enabled for single selection
+                let single = panel.selected_items().len() == 1;
+                for name in &["rename-remote", "chmod-remote"] {
+                    if let Some(action) = window.lookup_action(name) {
+                        if let Some(action) = action.downcast_ref::<gio::SimpleAction>() {
+                            action.set_enabled(single);
+                        }
+                    }
+                }
+                right_popover.set_pointing_to(Some(&gdk::Rectangle::new(
+                    x as i32, y as i32, 1, 1,
+                )));
+                right_popover.popup();
+            }
+        ));
+        self.imp().right_panel.column_view().add_controller(right_gesture);
+        self.imp().right_context_menu.replace(Some(right_popover));
     }
 
     fn setup_sync_navigation(&self) {

@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.3.0\n"
+"Project-Id-Version: cargo-app 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -255,6 +255,14 @@ msgstr "Connection failed: %s"
 msgid "Connect to a server first"
 msgstr "Connect to a server first"
 
+#: src/window.rs
+msgid "Upload"
+msgstr "Upload"
+
+#: src/window.rs
+msgid "Download"
+msgstr "Download"
+
 #: src/file_panel.rs
 msgid "%u item"
 msgid_plural "%u items"
@@ -297,6 +305,44 @@ msgstr "Failed: %s"
 msgid "Skipped"
 msgstr "Skipped"
 
+#: src/window.rs
+msgid "Rename"
+msgstr "Rename"
+
+#: src/window.rs
+msgid "Renamed successfully"
+msgstr "Renamed successfully"
+
+#: src/window.rs
+msgid "Rename failed: %s"
+msgstr "Rename failed: %s"
+
+#: src/window.rs
+msgid "Delete"
+msgstr "Delete"
+
+#: src/window.rs
+msgid "Deleted successfully"
+msgstr "Deleted successfully"
+
+#: src/window.rs
+msgid "Delete failed: %s"
+msgstr "Delete failed: %s"
+
+#: src/conflict_dialog.rs
+msgid "Delete '%s'?"
+msgstr "Delete '%s'?"
+
+#: src/conflict_dialog.rs
+msgid "Delete %u item?"
+msgid_plural "Delete %u items?"
+msgstr[0] "Delete %u item?"
+msgstr[1] "Delete %u items?"
+
+#: src/conflict_dialog.rs
+msgid "This cannot be undone."
+msgstr "This cannot be undone."
+
 #: src/conflict_dialog.rs
 msgid "File already exists"
 msgstr "File already exists"
@@ -336,3 +382,47 @@ msgstr "Cancel"
 #: src/conflict_dialog.rs
 msgid "OK"
 msgstr "OK"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Owner"
+msgstr "Owner"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Group"
+msgstr "Group"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Public"
+msgstr "Public"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Read"
+msgstr "Read"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Write"
+msgstr "Write"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Execute"
+msgstr "Execute"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Numeric value"
+msgstr "Numeric value"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Recurse into subdirectories"
+msgstr "Recurse into subdirectories"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Apply"
+msgstr "Apply"
+
+#: src/window.rs
+msgid "Permissions changed"
+msgstr "Permissions changed"
+
+#: src/window.rs
+msgid "Change permissions failed: %s"
+msgstr "Change permissions failed: %s"

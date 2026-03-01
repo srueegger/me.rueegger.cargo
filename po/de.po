@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.3.0\n"
+"Project-Id-Version: cargo-app 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -285,6 +285,14 @@ msgstr "Verbindung fehlgeschlagen: %s"
 msgid "Connect to a server first"
 msgstr "Zuerst mit einem Server verbinden"
 
+#: src/window.rs
+msgid "Upload"
+msgstr "Hochladen"
+
+#: src/window.rs
+msgid "Download"
+msgstr "Herunterladen"
+
 #
 # ── file_panel.rs ─────────────────────────────────────────────
 #
@@ -343,6 +351,44 @@ msgstr "Übersprungen"
 # ── conflict_dialog.rs ──────────────────────────────────────
 #
 
+#: src/window.rs
+msgid "Rename"
+msgstr "Umbenennen"
+
+#: src/window.rs
+msgid "Renamed successfully"
+msgstr "Erfolgreich umbenannt"
+
+#: src/window.rs
+msgid "Rename failed: %s"
+msgstr "Umbenennen fehlgeschlagen: %s"
+
+#: src/window.rs
+msgid "Delete"
+msgstr "Löschen"
+
+#: src/window.rs
+msgid "Deleted successfully"
+msgstr "Erfolgreich gelöscht"
+
+#: src/window.rs
+msgid "Delete failed: %s"
+msgstr "Löschen fehlgeschlagen: %s"
+
+#: src/conflict_dialog.rs
+msgid "Delete '%s'?"
+msgstr "'%s' löschen?"
+
+#: src/conflict_dialog.rs
+msgid "Delete %u item?"
+msgid_plural "Delete %u items?"
+msgstr[0] "%u Element löschen?"
+msgstr[1] "%u Elemente löschen?"
+
+#: src/conflict_dialog.rs
+msgid "This cannot be undone."
+msgstr "Dies kann nicht rückgängig gemacht werden."
+
 #: src/conflict_dialog.rs
 msgid "File already exists"
 msgstr "Datei existiert bereits"
@@ -382,3 +428,51 @@ msgstr "Abbrechen"
 #: src/conflict_dialog.rs
 msgid "OK"
 msgstr "OK"
+
+#
+# ── chmod_dialog.rs ──────────────────────────────────────────
+#
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Owner"
+msgstr "Besitzer"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Group"
+msgstr "Gruppe"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Public"
+msgstr "Andere"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Read"
+msgstr "Lesen"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Write"
+msgstr "Schreiben"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Execute"
+msgstr "Ausführen"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Numeric value"
+msgstr "Zahlenwert"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Recurse into subdirectories"
+msgstr "Rekursiv auf Unterverzeichnisse anwenden"
+
+#: src/dialogs/chmod_dialog.rs
+msgid "Apply"
+msgstr "Anwenden"
+
+#: src/window.rs
+msgid "Permissions changed"
+msgstr "Berechtigungen geändert"
+
+#: src/window.rs
+msgid "Change permissions failed: %s"
+msgstr "Berechtigungen ändern fehlgeschlagen: %s"

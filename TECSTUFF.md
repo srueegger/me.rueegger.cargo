@@ -6,7 +6,7 @@
 - **Binary:** `cargo-app`
 - **Display Name:** Cargo
 - **Language:** Rust
-- **GUI Framework:** GTK4 + libadwaita 1.7.x
+- **GUI Framework:** GTK4 + libadwaita 1.8.x
 - **Build System:** Meson + Cargo
 - **Distribution:** Flatpak (GNOME 49 Runtime)
 - **License:** GPL-2.0-only
@@ -39,6 +39,18 @@ All GTK widgets use the standard gtk-rs subclassing pattern:
 2. `glib::wrapper!` macro for the public type
 3. `CompositeTemplate` for UI-bound widgets
 
+### Context Menus (PopoverMenu)
+
+When adding a `PopoverMenu` via `set_parent()` on a widget (e.g. `ColumnView`), you **must**:
+
+1. Store the `PopoverMenu` in the parent widget's `imp` struct (e.g. `RefCell<Option<gtk::PopoverMenu>>`)
+2. Call `popover.unparent()` in the `dispose()` method of the parent widget
+
+Without this, GTK will emit warnings on shutdown:
+`Finalizing GtkColumnView, but it still has children left: GtkPopoverMenu`
+
+See `CargoWindow` for the reference implementation.
+
 ### Async Model
 
 - **Tokio Runtime**: Static runtime for network I/O (suppaftp, russh)
@@ -65,9 +77,9 @@ pub trait Protocol: Send + Sync {
 ### Prerequisites
 
 - Rust stable toolchain
-- Meson >= 0.59
-- GTK4 development libraries >= 4.16
-- libadwaita development libraries >= 1.6
+- Meson >= 1.1
+- GTK4 development libraries >= 4.20
+- libadwaita development libraries >= 1.8
 - gettext tools
 
 ### Building
@@ -172,6 +184,7 @@ me.rueegger.cargo/
 ├── data/
 │   ├── meson.build
 │   ├── cargo-app.gresource.xml
+│   ├── style.css           # Application stylesheet
 │   ├── me.rueegger.cargo.desktop.in
 │   ├── me.rueegger.cargo.metainfo.xml.in
 │   ├── me.rueegger.cargo.gschema.xml
@@ -194,7 +207,19 @@ me.rueegger.cargo/
     ├── main.rs
     ├── config.rs
     ├── application.rs
-    ├── window.rs
+    ├── window.rs           # Main window, context menus, actions
+    ├── connection.rs       # Async connection handle (tokio ↔ GTK bridge)
+    ├── file_item.rs        # GObject wrapper for file list entries
+    ├── file_panel.rs       # Dual-pane file browser panel widget
+    ├── site_manager.rs     # Site profile persistence (JSON)
+    ├── transfer_item.rs    # GObject wrapper for transfer queue entries
+    ├── transfer_queue.rs   # Transfer queue logic and conflict handling
+    ├── dialogs/
+    │   ├── mod.rs
+    │   ├── delete_dialog.rs
+    │   ├── overwrite_dialog.rs
+    │   ├── rename_dialog.rs
+    │   └── site_manager_dialog.rs
     └── protocol/
         ├── mod.rs          # Protocol trait + types + factory
         ├── error.rs        # Unified error types

@@ -325,6 +325,16 @@ impl Protocol for FtpProtocol {
         Ok(())
     }
 
+    async fn chmod(&self, path: &str, mode: u32) -> Result<()> {
+        let stream = self.stream()?;
+        let mut ftp = stream.lock().await;
+
+        let cmd = format!("CHMOD {:o} {}", mode, path);
+        ftp_call!(&mut *ftp, site(cmd))
+            .map_err(|e| ProtocolError::FileOperation(e.to_string()))?;
+        Ok(())
+    }
+
     fn protocol_type(&self) -> ProtocolType {
         self.protocol_type
     }

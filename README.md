@@ -51,9 +51,9 @@ flatpak install rueegger-dev me.rueegger.cargo
 
 Requirements:
 - Rust (stable toolchain)
-- Meson >= 0.59
-- GTK4 >= 4.16
-- libadwaita >= 1.6
+- Meson >= 1.1
+- GTK4 >= 4.20
+- libadwaita >= 1.8
 - gettext
 
 ```bash
