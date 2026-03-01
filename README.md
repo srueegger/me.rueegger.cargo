@@ -4,10 +4,25 @@ A dual-pane file transfer application for GNOME, built with GTK4 and libadwaita.
 
 ## Screenshots
 
+### Dual-Pane File Browser
+Browse local and remote files side by side. Transfer files between your machine and a server with a clear, split-panel layout.
+
 | Light | Dark |
 |-------|------|
 | ![App Overview](screenshots/app-overview.png) | ![App Overview Dark](screenshots/app-overview-dark.png) |
+
+### Site Manager
+Save and organize your server connections. Supports FTP, FTPS, and SFTP with password, SSH key, or agent authentication.
+
+| Light | Dark |
+|-------|------|
 | ![Site Manager](screenshots/site-manager.png) | ![Site Manager Dark](screenshots/site-manager-dark.png) |
+
+### Overwrite Confirmation
+When a file already exists at the destination, choose how to handle conflicts — overwrite, skip, rename, or apply a rule to the entire queue.
+
+| Light | Dark |
+|-------|------|
 | ![Overwrite Dialog](screenshots/overwrite-dialog.png) | ![Overwrite Dialog Dark](screenshots/overwrite-dialog-dark.png) |
 
 ## Features
