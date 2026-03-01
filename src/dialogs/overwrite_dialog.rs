@@ -6,7 +6,7 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
-use gettextrs::{gettext, ngettext};
+use gettextrs::gettext;
 use gtk::prelude::*;
 use libadwaita as adw;
 use adw::prelude::*;
@@ -101,104 +101,6 @@ pub async fn show_overwrite_dialog(
                 action,
                 apply_to_queue: apply_check.is_active(),
             })
-        } else {
-            None
-        };
-        let _ = tx.send_blocking(result);
-    });
-
-    dialog.present(Some(window));
-
-    rx.recv().await.unwrap_or(None)
-}
-
-/// Show a delete confirmation dialog.
-/// Returns `true` if the user confirmed the deletion.
-pub async fn show_delete_confirmation(
-    window: &impl IsA<gtk::Widget>,
-    names: &[String],
-) -> bool {
-    let (tx, rx) = async_channel::bounded::<bool>(1);
-
-    let heading = if names.len() == 1 {
-        gettext("Delete '%s'?").replace("%s", &names[0])
-    } else {
-        ngettext("Delete %u item?", "Delete %u items?", names.len() as u32)
-            .replace("%u", &names.len().to_string())
-    };
-
-    let dialog = adw::AlertDialog::builder()
-        .heading(heading)
-        .body(gettext("This cannot be undone."))
-        .build();
-
-    dialog.add_response("cancel", &gettext("Cancel"));
-    dialog.add_response("delete", &gettext("Delete"));
-    dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
-    dialog.set_default_response(Some("cancel"));
-    dialog.set_close_response("cancel");
-
-    dialog.connect_response(None, move |_dialog, response| {
-        let _ = tx.send_blocking(response == "delete");
-    });
-
-    dialog.present(Some(window));
-
-    rx.recv().await.unwrap_or(false)
-}
-
-/// Show a rename dialog with the current name pre-filled.
-/// Returns `Some(new_name)` if the user confirmed, `None` if cancelled.
-pub async fn show_rename_dialog(
-    window: &impl IsA<gtk::Widget>,
-    current_name: &str,
-) -> Option<String> {
-    let (tx, rx) = async_channel::bounded::<Option<String>>(1);
-
-    let entry = gtk::Entry::new();
-    entry.set_text(current_name);
-    entry.set_margin_top(12);
-    entry.set_margin_start(12);
-    entry.set_margin_end(12);
-    entry.set_activates_default(true);
-
-    // Select filename without extension
-    let select_end = current_name.rfind('.').unwrap_or(current_name.len());
-    entry.select_region(0, select_end as i32);
-
-    let dialog = adw::AlertDialog::builder()
-        .heading(gettext("Rename"))
-        .build();
-
-    dialog.set_extra_child(Some(&entry));
-    dialog.add_response("cancel", &gettext("Cancel"));
-    dialog.add_response("rename", &gettext("Rename"));
-    dialog.set_response_appearance("rename", adw::ResponseAppearance::Suggested);
-    dialog.set_default_response(Some("rename"));
-    dialog.set_close_response("cancel");
-
-    // Disable rename button when name is empty or unchanged
-    let current = current_name.to_string();
-    dialog.set_response_enabled("rename", false);
-    let dialog_weak = dialog.downgrade();
-    let current_clone = current.clone();
-    entry.connect_changed(move |entry| {
-        let text = entry.text();
-        let enabled = !text.is_empty() && text.as_str() != current_clone;
-        if let Some(d) = dialog_weak.upgrade() {
-            d.set_response_enabled("rename", enabled);
-        }
-    });
-
-    let entry_clone = entry.clone();
-    dialog.connect_response(None, move |_dialog, response| {
-        let result = if response == "rename" {
-            let new_name = entry_clone.text().to_string();
-            if new_name.is_empty() || new_name == current {
-                None
-            } else {
-                Some(new_name)
-            }
         } else {
             None
         };

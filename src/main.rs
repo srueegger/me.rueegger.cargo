@@ -8,13 +8,12 @@
 
 mod application;
 mod config;
-mod conflict_dialog;
 mod connection;
+mod dialogs;
 mod file_item;
 mod file_panel;
 mod protocol;
 mod site_manager;
-mod site_manager_dialog;
 mod transfer_item;
 mod transfer_queue;
 mod window;

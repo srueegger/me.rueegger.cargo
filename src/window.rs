@@ -80,7 +80,7 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             crate::file_item::FileItem::ensure_type();
             crate::file_panel::FilePanel::ensure_type();
-            crate::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
+            crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::ensure_type();
             TransferItem::ensure_type();
             klass.bind_template();
         }
@@ -200,7 +200,7 @@ impl CargoWindow {
                     window.imp().toast_overlay.add_toast(toast);
                 } else {
                     // Open Site Manager
-                    let dialog = crate::site_manager_dialog::CargoSiteManagerDialog::new();
+                    let dialog = crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::new();
                     dialog.connect_closed(glib::clone!(
                         #[weak]
                         window,
@@ -522,7 +522,7 @@ impl CargoWindow {
         glib::spawn_future_local(async move {
             let Some(window) = window_weak.upgrade() else { return; };
 
-            let Some(new_name) = crate::conflict_dialog::show_rename_dialog(&window, &old_name).await else {
+            let Some(new_name) = crate::dialogs::show_rename_dialog(&window, &old_name).await else {
                 return;
             };
 
@@ -559,7 +559,7 @@ impl CargoWindow {
         glib::spawn_future_local(async move {
             let Some(window) = window_weak.upgrade() else { return; };
 
-            let Some(new_name) = crate::conflict_dialog::show_rename_dialog(&window, &old_name).await else {
+            let Some(new_name) = crate::dialogs::show_rename_dialog(&window, &old_name).await else {
                 return;
             };
 
@@ -614,7 +614,7 @@ impl CargoWindow {
         glib::spawn_future_local(async move {
             let Some(window) = window_weak.upgrade() else { return; };
 
-            if !crate::conflict_dialog::show_delete_confirmation(&window, &names).await {
+            if !crate::dialogs::show_delete_confirmation(&window, &names).await {
                 return;
             }
 
@@ -662,7 +662,7 @@ impl CargoWindow {
         glib::spawn_future_local(async move {
             let Some(window) = window_weak.upgrade() else { return; };
 
-            if !crate::conflict_dialog::show_delete_confirmation(&window, &names).await {
+            if !crate::dialogs::show_delete_confirmation(&window, &names).await {
                 return;
             }
 

@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use gtk::{gio, glib, prelude::*};
 
-use crate::conflict_dialog::{self, ConflictAction};
+use crate::dialogs::{self, ConflictAction};
 use crate::connection::ConnectionHandle;
 use crate::file_panel::FilePanel;
 use crate::protocol::TransferProgress;
@@ -150,13 +150,13 @@ impl TransferQueue {
                     .map(|(d, _)| if d.is_empty() { "/" } else { d })
                     .unwrap_or("/");
                 match conn.list_dir(remote_dir).await {
-                    Ok(entries) => conflict_dialog::remote_file_exists(&entries, &filename)
+                    Ok(entries) => dialogs::remote_file_exists(&entries, &filename)
                         .map(|e| (e.size, e.modified)),
                     Err(_) => None,
                 }
             } else {
                 if final_local_path.exists() && final_local_path.is_file() {
-                    conflict_dialog::local_file_info(&final_local_path)
+                    dialogs::local_file_info(&final_local_path)
                 } else {
                     None
                 }
@@ -172,7 +172,7 @@ impl TransferQueue {
                         queue_clone.is_processing.set(false);
                         return;
                     };
-                    match conflict_dialog::show_overwrite_dialog(&window, &filename).await {
+                    match dialogs::show_overwrite_dialog(&window, &filename).await {
                         Some(resolution) => {
                             if resolution.apply_to_queue {
                                 *queue_clone.conflict_policy.borrow_mut() =
@@ -186,7 +186,7 @@ impl TransferQueue {
 
                 // Get source metadata
                 let (source_size, source_modified) = if direction == DIRECTION_UPLOAD {
-                    conflict_dialog::local_file_info(&local_path).unwrap_or((0, None))
+                    dialogs::local_file_info(&local_path).unwrap_or((0, None))
                 } else {
                     let remote_dir = remote_path
                         .rsplit_once('/')
@@ -194,7 +194,7 @@ impl TransferQueue {
                         .unwrap_or("/");
                     match conn.list_dir(remote_dir).await {
                         Ok(entries) => {
-                            conflict_dialog::remote_file_exists(&entries, &filename)
+                            dialogs::remote_file_exists(&entries, &filename)
                                 .map(|e| (e.size, e.modified))
                                 .unwrap_or((0, None))
                         }
@@ -208,7 +208,7 @@ impl TransferQueue {
                     local_path.display().to_string()
                 };
 
-                let (should_proceed, new_dest) = conflict_dialog::should_transfer(
+                let (should_proceed, new_dest) = dialogs::should_transfer(
                     action,
                     source_size,
                     source_modified,
