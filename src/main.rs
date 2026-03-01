@@ -8,6 +8,7 @@
 
 mod application;
 mod config;
+mod conflict_dialog;
 mod connection;
 mod file_item;
 mod file_panel;

@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.2.0\n"
+"Project-Id-Version: cargo-app 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -334,3 +334,51 @@ msgstr "Fehlgeschlagen"
 #: src/transfer_item.rs
 msgid "Failed: %s"
 msgstr "Fehlgeschlagen: %s"
+
+#: src/transfer_item.rs
+msgid "Skipped"
+msgstr "Übersprungen"
+
+#
+# ── conflict_dialog.rs ──────────────────────────────────────
+#
+
+#: src/conflict_dialog.rs
+msgid "File already exists"
+msgstr "Datei existiert bereits"
+
+#: src/conflict_dialog.rs
+msgid "The file '%s' already exists at the destination. What would you like to do?"
+msgstr "Die Datei '%s' existiert am Zielort bereits. Was möchten Sie tun?"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite"
+msgstr "Überschreiben"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite if size differs"
+msgstr "Überschreiben wenn Grösse abweicht"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite if source is newer"
+msgstr "Überschreiben wenn Quelle neuer"
+
+#: src/conflict_dialog.rs
+msgid "Skip"
+msgstr "Überspringen"
+
+#: src/conflict_dialog.rs
+msgid "Rename (append number)"
+msgstr "Umbenennen (Nummer anhängen)"
+
+#: src/conflict_dialog.rs
+msgid "Apply to current queue"
+msgstr "Auf aktuelle Warteschlange anwenden"
+
+#: src/conflict_dialog.rs
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/conflict_dialog.rs
+msgid "OK"
+msgstr "OK"
