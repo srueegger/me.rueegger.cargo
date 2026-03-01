@@ -351,6 +351,32 @@ msgstr "Übersprungen"
 # ── conflict_dialog.rs ──────────────────────────────────────
 #
 
+#: src/window.rs
+msgid "Delete"
+msgstr "Löschen"
+
+#: src/window.rs
+msgid "Deleted successfully"
+msgstr "Erfolgreich gelöscht"
+
+#: src/window.rs
+msgid "Delete failed: %s"
+msgstr "Löschen fehlgeschlagen: %s"
+
+#: src/conflict_dialog.rs
+msgid "Delete '%s'?"
+msgstr "'%s' löschen?"
+
+#: src/conflict_dialog.rs
+msgid "Delete %u item?"
+msgid_plural "Delete %u items?"
+msgstr[0] "%u Element löschen?"
+msgstr[1] "%u Elemente löschen?"
+
+#: src/conflict_dialog.rs
+msgid "This cannot be undone."
+msgstr "Dies kann nicht rückgängig gemacht werden."
+
 #: src/conflict_dialog.rs
 msgid "File already exists"
 msgstr "Datei existiert bereits"

@@ -508,6 +508,112 @@ impl CargoWindow {
         );
     }
 
+    fn on_delete_local(&self) {
+        let imp = self.imp();
+        let selected = imp.left_panel.selected_items();
+        if selected.is_empty() {
+            return;
+        }
+
+        let names: Vec<String> = selected.iter().map(|i| i.name()).collect();
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
+        let base_path = imp.left_panel.current_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            if !crate::conflict_dialog::show_delete_confirmation(&window, &names).await {
+                return;
+            }
+
+            let mut errors: Vec<String> = Vec::new();
+            for (name, is_dir) in &items {
+                let path = base_path.join(name);
+                let result = if *is_dir {
+                    std::fs::remove_dir_all(&path)
+                } else {
+                    std::fs::remove_file(&path)
+                };
+                if let Err(e) = result {
+                    errors.push(format!("{}: {}", name, e));
+                }
+            }
+
+            window.imp().left_panel.reload();
+
+            let toast = if errors.is_empty() {
+                adw::Toast::new(&gettext("Deleted successfully"))
+            } else {
+                adw::Toast::new(
+                    &gettext("Delete failed: %s").replace("%s", &errors.join(", ")),
+                )
+            };
+            window.imp().toast_overlay.add_toast(toast);
+        });
+    }
+
+    fn on_delete_remote(&self) {
+        let imp = self.imp();
+        let selected = imp.right_panel.selected_items();
+        if selected.is_empty() {
+            return;
+        }
+
+        let names: Vec<String> = selected.iter().map(|i| i.name()).collect();
+        let items: Vec<(String, bool)> = selected
+            .iter()
+            .map(|i| (i.name(), i.is_dir()))
+            .collect();
+        let remote_dir = imp.right_panel.remote_path();
+
+        let window_weak = self.downgrade();
+        glib::spawn_future_local(async move {
+            let Some(window) = window_weak.upgrade() else { return; };
+
+            if !crate::conflict_dialog::show_delete_confirmation(&window, &names).await {
+                return;
+            }
+
+            let Some(conn) = window.get_connection() else {
+                let toast = adw::Toast::new(&gettext("Connect to a server first"));
+                window.imp().toast_overlay.add_toast(toast);
+                return;
+            };
+
+            let mut errors: Vec<String> = Vec::new();
+            for (name, is_dir) in &items {
+                let remote_path = if remote_dir.ends_with('/') {
+                    format!("{}{}", remote_dir, name)
+                } else {
+                    format!("{}/{}", remote_dir, name)
+                };
+                let result = if *is_dir {
+                    conn.delete_recursive(&remote_path).await
+                } else {
+                    conn.delete(&remote_path).await
+                };
+                if let Err(e) = result {
+                    errors.push(format!("{}: {}", name, e));
+                }
+            }
+
+            window.imp().right_panel.reload();
+
+            let toast = if errors.is_empty() {
+                adw::Toast::new(&gettext("Deleted successfully"))
+            } else {
+                adw::Toast::new(
+                    &gettext("Delete failed: %s").replace("%s", &errors.join(", ")),
+                )
+            };
+            window.imp().toast_overlay.add_toast(toast);
+        });
+    }
+
     fn setup_drag_and_drop(&self) {
         let imp = self.imp();
         Self::attach_drag_source(&imp.left_panel, "left");
@@ -625,12 +731,35 @@ impl CargoWindow {
             }
         ));
 
+        let delete_local_action = gio::SimpleAction::new("delete-local", None);
+        delete_local_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_delete_local();
+            }
+        ));
+
+        let delete_remote_action = gio::SimpleAction::new("delete-remote", None);
+        delete_remote_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_delete_remote();
+            }
+        ));
+
         self.add_action(&upload_action);
         self.add_action(&download_action);
+        self.add_action(&delete_local_action);
+        self.add_action(&delete_remote_action);
 
-        // Left panel: Upload context menu
+        // Left panel: Upload + Delete context menu
         let left_menu = gio::Menu::new();
         left_menu.append(Some(&gettext("Upload")), Some("win.upload-selected"));
+        let left_section = gio::Menu::new();
+        left_section.append(Some(&gettext("Delete")), Some("win.delete-local"));
+        left_menu.append_section(None, &left_section);
         let left_popover = gtk::PopoverMenu::from_model(Some(&left_menu));
         left_popover.set_parent(self.imp().left_panel.column_view().upcast_ref::<gtk::Widget>());
         left_popover.set_has_arrow(false);
@@ -653,9 +782,12 @@ impl CargoWindow {
         ));
         self.imp().left_panel.column_view().add_controller(left_gesture);
 
-        // Right panel: Download context menu
+        // Right panel: Download + Delete context menu
         let right_menu = gio::Menu::new();
         right_menu.append(Some(&gettext("Download")), Some("win.download-selected"));
+        let right_section = gio::Menu::new();
+        right_section.append(Some(&gettext("Delete")), Some("win.delete-remote"));
+        right_menu.append_section(None, &right_section);
         let right_popover = gtk::PopoverMenu::from_model(Some(&right_menu));
         right_popover.set_parent(self.imp().right_panel.column_view().upcast_ref::<gtk::Widget>());
         right_popover.set_has_arrow(false);

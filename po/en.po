@@ -305,6 +305,32 @@ msgstr "Failed: %s"
 msgid "Skipped"
 msgstr "Skipped"
 
+#: src/window.rs
+msgid "Delete"
+msgstr "Delete"
+
+#: src/window.rs
+msgid "Deleted successfully"
+msgstr "Deleted successfully"
+
+#: src/window.rs
+msgid "Delete failed: %s"
+msgstr "Delete failed: %s"
+
+#: src/conflict_dialog.rs
+msgid "Delete '%s'?"
+msgstr "Delete '%s'?"
+
+#: src/conflict_dialog.rs
+msgid "Delete %u item?"
+msgid_plural "Delete %u items?"
+msgstr[0] "Delete %u item?"
+msgstr[1] "Delete %u items?"
+
+#: src/conflict_dialog.rs
+msgid "This cannot be undone."
+msgstr "This cannot be undone."
+
 #: src/conflict_dialog.rs
 msgid "File already exists"
 msgstr "File already exists"

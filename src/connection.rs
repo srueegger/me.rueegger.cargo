@@ -177,6 +177,56 @@ impl ConnectionHandle {
             .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
     }
 
+    /// Delete a file on the remote server.
+    pub async fn delete(&self, path: &str) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let path = path.to_string();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx.send(p.delete(&path).await).await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
+    /// Delete an empty directory on the remote server.
+    pub async fn delete_dir(&self, path: &str) -> Result<(), ProtocolError> {
+        let (tx, rx) = async_channel::bounded(1);
+        let proto = self.protocol.clone();
+        let path = path.to_string();
+
+        self.rt_handle.spawn(async move {
+            let p = proto.lock().await;
+            let _ = tx.send(p.delete_dir(&path).await).await;
+        });
+
+        rx.recv()
+            .await
+            .map_err(|_| ProtocolError::ConnectionFailed("Channel closed".into()))?
+    }
+
+    /// Recursively delete a directory and all its contents on the remote server.
+    pub async fn delete_recursive(&self, path: &str) -> Result<(), ProtocolError> {
+        let entries = self.list_dir(path).await?;
+        for entry in entries {
+            let child_path = if path.ends_with('/') {
+                format!("{}{}", path, entry.name)
+            } else {
+                format!("{}/{}", path, entry.name)
+            };
+            if entry.is_dir {
+                Box::pin(self.delete_recursive(&child_path)).await?;
+            } else {
+                self.delete(&child_path).await?;
+            }
+        }
+        self.delete_dir(path).await
+    }
+
     pub fn host_label(&self) -> &str {
         &self.host_label
     }
