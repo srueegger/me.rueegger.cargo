@@ -89,6 +89,7 @@ impl CargoApplication {
         self.add_action_entries([quit_action, about_action]);
 
         self.set_accels_for_action("app.quit", &["<primary>q"]);
+        self.set_accels_for_action("win.site-manager", &["<primary>s"]);
     }
 
     fn show_about(&self) {

@@ -185,7 +185,22 @@ impl CargoWindow {
         self.imp().sync_nav_button.set_sensitive(sensitive);
     }
 
+    fn open_site_manager(&self) {
+        let dialog = crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::new();
+        dialog.connect_closed(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |dialog| {
+                if let Some((profile, password)) = dialog.take_connect_request() {
+                    window.initiate_connection(profile, password);
+                }
+            }
+        ));
+        dialog.present(Some(self));
+    }
+
     fn setup_site_manager_button(&self) {
+        // Toolbar button: toggles between Site Manager / Disconnect
         self.imp().connect_button.connect_clicked(glib::clone!(
             #[weak(rename_to = window)]
             self,
@@ -199,21 +214,21 @@ impl CargoWindow {
                     let toast = adw::Toast::new(&gettext("Disconnected"));
                     window.imp().toast_overlay.add_toast(toast);
                 } else {
-                    // Open Site Manager
-                    let dialog = crate::dialogs::site_manager_dialog::CargoSiteManagerDialog::new();
-                    dialog.connect_closed(glib::clone!(
-                        #[weak]
-                        window,
-                        move |dialog| {
-                            if let Some((profile, password)) = dialog.take_connect_request() {
-                                window.initiate_connection(profile, password);
-                            }
-                        }
-                    ));
-                    dialog.present(Some(&window));
+                    window.open_site_manager();
                 }
             }
         ));
+
+        // Menu action + keyboard shortcut (Ctrl+S)
+        let sm_action = gio::SimpleAction::new("site-manager", None);
+        sm_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.open_site_manager();
+            }
+        ));
+        self.add_action(&sm_action);
     }
 
     fn setup_transfer_buttons(&self) {
