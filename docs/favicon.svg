@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <!-- GNOME Blue gradient for main face -->
+    <linearGradient id="frontGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3584e4"/>
+      <stop offset="1" stop-color="#1a5fb4"/>
+    </linearGradient>
+    <!-- Top face gradient (lighter) -->
+    <linearGradient id="topGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#62a0ea"/>
+      <stop offset="1" stop-color="#3584e4"/>
+    </linearGradient>
+    <!-- Side face gradient (darker) -->
+    <linearGradient id="sideGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1a5fb4"/>
+      <stop offset="1" stop-color="#164a8a"/>
+    </linearGradient>
+    <!-- Arrow gradient -->
+    <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#deddda"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="64" cy="118" rx="40" ry="6" fill="#000000" opacity="0.15"/>
+
+  <!-- Cargo crate - 3D box with GNOME-style depth -->
+
+  <!-- Front face -->
+  <rect x="18" y="42" width="72" height="64" rx="6" ry="6" fill="url(#frontGrad)"/>
+
+  <!-- Top face (parallelogram for 3D effect) -->
+  <path d="M18,42 L18,42 Q18,36 24,36 L82,36 Q86,36 88,38 L108,26 Q112,24 112,28 L112,28 L38,40 Q34,42 30,42 Z" fill="url(#topGrad)"/>
+
+  <!-- Right side face -->
+  <path d="M90,42 L110,28 L110,92 Q110,96 108,98 L90,106 L90,42 Z" fill="url(#sideGrad)"/>
+
+  <!-- Top face refined -->
+  <path d="M24,36 Q18,36 18,42 L90,42 L110,28 Q110,24 104,24 L44,24 Z" fill="url(#topGrad)" opacity="0.95"/>
+
+  <!-- Crate horizontal bands (front) -->
+  <rect x="18" y="56" width="72" height="3" rx="1" fill="#1a5fb4" opacity="0.3"/>
+  <rect x="18" y="82" width="72" height="3" rx="1" fill="#1a5fb4" opacity="0.3"/>
+
+  <!-- Crate vertical band (front) -->
+  <rect x="50" y="42" width="4" rx="1" height="64" fill="#1a5fb4" opacity="0.2"/>
+
+  <!-- Side horizontal bands -->
+  <line x1="90" y1="58" x2="110" y2="46" stroke="#164a8a" stroke-width="2" opacity="0.3"/>
+  <line x1="90" y1="84" x2="110" y2="72" stroke="#164a8a" stroke-width="2" opacity="0.3"/>
+
+  <!-- Transfer arrows (bidirectional - representing file transfer) -->
+  <!-- Upload arrow (left, pointing up) -->
+  <g transform="translate(36, 58)">
+    <path d="M0,24 L0,8 L-8,8 L4,-4 L16,8 L8,8 L8,24 Z" fill="url(#arrowGrad)" opacity="0.95"/>
+  </g>
+
+  <!-- Download arrow (right, pointing down) -->
+  <g transform="translate(58, 58)">
+    <path d="M0,0 L0,16 L-8,16 L4,28 L16,16 L8,16 L8,0 Z" fill="url(#arrowGrad)" opacity="0.95"/>
+  </g>
+
+  <!-- Subtle highlight on top-left edge -->
+  <path d="M24,36 Q18,36 18,42" stroke="#62a0ea" stroke-width="1" fill="none" opacity="0.5"/>
+
+  <!-- Bottom edge shadow -->
+  <line x1="24" y1="106" x2="84" y2="106" stroke="#164a8a" stroke-width="1" opacity="0.3"/>
+</svg>
