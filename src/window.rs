@@ -105,6 +105,7 @@ mod imp {
             obj.setup_transfer_queue_ui();
             obj.setup_sync_navigation();
             obj.setup_drag_and_drop();
+            obj.setup_context_menus();
         }
     }
 
@@ -602,6 +603,74 @@ impl CargoWindow {
         });
 
         panel.column_view().add_controller(drop_target);
+    }
+
+    fn setup_context_menus(&self) {
+        // Actions
+        let upload_action = gio::SimpleAction::new("upload-selected", None);
+        upload_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_upload_clicked();
+            }
+        ));
+
+        let download_action = gio::SimpleAction::new("download-selected", None);
+        download_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_download_clicked();
+            }
+        ));
+
+        self.add_action(&upload_action);
+        self.add_action(&download_action);
+
+        // Left panel: Upload context menu
+        let left_menu = gio::Menu::new();
+        left_menu.append(Some(&gettext("Upload")), Some("win.upload-selected"));
+        let left_popover = gtk::PopoverMenu::from_model(Some(&left_menu));
+        left_popover.set_parent(self.imp().left_panel.column_view().upcast_ref::<gtk::Widget>());
+        left_popover.set_has_arrow(false);
+
+        let left_gesture = gtk::GestureClick::new();
+        left_gesture.set_button(3);
+        left_gesture.connect_pressed(glib::clone!(
+            #[weak]
+            left_popover,
+            move |gesture, _, x, y| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                left_popover.set_pointing_to(Some(&gdk::Rectangle::new(
+                    x as i32, y as i32, 1, 1,
+                )));
+                left_popover.popup();
+            }
+        ));
+        self.imp().left_panel.column_view().add_controller(left_gesture);
+
+        // Right panel: Download context menu
+        let right_menu = gio::Menu::new();
+        right_menu.append(Some(&gettext("Download")), Some("win.download-selected"));
+        let right_popover = gtk::PopoverMenu::from_model(Some(&right_menu));
+        right_popover.set_parent(self.imp().right_panel.column_view().upcast_ref::<gtk::Widget>());
+        right_popover.set_has_arrow(false);
+
+        let right_gesture = gtk::GestureClick::new();
+        right_gesture.set_button(3);
+        right_gesture.connect_pressed(glib::clone!(
+            #[weak]
+            right_popover,
+            move |gesture, _, x, y| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                right_popover.set_pointing_to(Some(&gdk::Rectangle::new(
+                    x as i32, y as i32, 1, 1,
+                )));
+                right_popover.popup();
+            }
+        ));
+        self.imp().right_panel.column_view().add_controller(right_gesture);
     }
 
     fn setup_sync_navigation(&self) {

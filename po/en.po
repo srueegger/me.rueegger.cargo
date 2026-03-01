@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.3.0\n"
+"Project-Id-Version: cargo-app 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -254,6 +254,14 @@ msgstr "Connection failed: %s"
 #: src/window.rs
 msgid "Connect to a server first"
 msgstr "Connect to a server first"
+
+#: src/window.rs
+msgid "Upload"
+msgstr "Upload"
+
+#: src/window.rs
+msgid "Download"
+msgstr "Download"
 
 #: src/file_panel.rs
 msgid "%u item"
