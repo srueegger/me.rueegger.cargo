@@ -9,10 +9,10 @@ gnome = import('gnome')
 
 base_id = 'me.rueegger.cargo'
 
-dependency('glib-2.0', version: '>= 2.76')
-dependency('gio-2.0', version: '>= 2.76')
-dependency('gtk4', version: '>= 4.16')
-dependency('libadwaita-1', version: '>= 1.6')
+dependency('glib-2.0', version: '>= 2.86')
+dependency('gio-2.0', version: '>= 2.86')
+dependency('gtk4', version: '>= 4.20')
+dependency('libadwaita-1', version: '>= 1.8')
 
 profile = get_option('profile')
 if profile == 'release'
