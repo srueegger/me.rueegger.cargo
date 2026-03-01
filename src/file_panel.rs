@@ -159,6 +159,7 @@ impl FilePanel {
             } else {
                 label.remove_css_class("accent");
             }
+            bx.set_widget_name(&format!("fp-row-{}", list_item.position()));
         });
         name_factory.connect_unbind(|_, list_item| {
             let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -209,6 +210,7 @@ impl FilePanel {
             let item: FileItem = list_item.item().and_downcast().unwrap();
             let label: gtk::Label = list_item.child().and_downcast().unwrap();
             label.set_label(&get_text_fn(&item));
+            label.set_widget_name(&format!("fp-row-{}", list_item.position()));
         });
         column.set_factory(Some(&factory));
     }
@@ -443,6 +445,36 @@ impl FilePanel {
 
     pub fn column_view(&self) -> &gtk::ColumnView {
         &self.imp().column_view
+    }
+
+    /// Select the item at the given coordinates (relative to the ColumnView).
+    /// If the item is already part of the current selection, keep the selection
+    /// unchanged (supports multi-select context menus). Otherwise, clear
+    /// the selection and select only the clicked item.
+    pub fn select_at_coords(&self, x: f64, y: f64) {
+        let cv = &*self.imp().column_view;
+        let Some(picked) = cv.pick(x, y, gtk::PickFlags::DEFAULT) else {
+            return;
+        };
+        // Walk up the widget tree to find a widget tagged with "fp-row-{pos}"
+        let mut widget = Some(picked);
+        while let Some(ref w) = widget {
+            let name = w.widget_name();
+            if let Some(pos_str) = name.strip_prefix("fp-row-") {
+                if let Ok(pos) = pos_str.parse::<u32>() {
+                    if let Some(model) = cv.model() {
+                        if let Some(sel) = model.downcast_ref::<gtk::MultiSelection>() {
+                            if !sel.is_selected(pos) {
+                                sel.unselect_all();
+                                sel.select_item(pos, false);
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+            widget = w.parent();
+        }
     }
 
     pub fn current_path(&self) -> PathBuf {

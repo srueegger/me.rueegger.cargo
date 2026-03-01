@@ -640,8 +640,11 @@ impl CargoWindow {
         left_gesture.connect_pressed(glib::clone!(
             #[weak]
             left_popover,
+            #[weak(rename_to = panel)]
+            self.imp().left_panel,
             move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
+                panel.select_at_coords(x, y);
                 left_popover.set_pointing_to(Some(&gdk::Rectangle::new(
                     x as i32, y as i32, 1, 1,
                 )));
@@ -662,8 +665,11 @@ impl CargoWindow {
         right_gesture.connect_pressed(glib::clone!(
             #[weak]
             right_popover,
+            #[weak(rename_to = panel)]
+            self.imp().right_panel,
             move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
+                panel.select_at_coords(x, y);
                 right_popover.set_pointing_to(Some(&gdk::Rectangle::new(
                     x as i32, y as i32, 1, 1,
                 )));
