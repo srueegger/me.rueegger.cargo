@@ -6,12 +6,13 @@
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
 
 use gtk::{gio, glib, prelude::*};
 
+use crate::conflict_dialog::{self, ConflictAction};
 use crate::connection::ConnectionHandle;
 use crate::file_panel::FilePanel;
 use crate::protocol::TransferProgress;
@@ -22,6 +23,7 @@ use crate::transfer_item::*;
 pub struct TransferQueue {
     store: gio::ListStore,
     is_processing: Cell<bool>,
+    conflict_policy: RefCell<Option<ConflictAction>>,
 }
 
 impl TransferQueue {
@@ -29,6 +31,7 @@ impl TransferQueue {
         Self {
             store: gio::ListStore::new::<TransferItem>(),
             is_processing: Cell::new(false),
+            conflict_policy: RefCell::new(None),
         }
     }
 
@@ -50,7 +53,10 @@ impl TransferQueue {
             if let Some(obj) = self.store.item(i) {
                 let item: TransferItem = obj.downcast().unwrap();
                 let status = item.status();
-                if status == STATUS_COMPLETED || status == STATUS_FAILED {
+                if status == STATUS_COMPLETED
+                    || status == STATUS_FAILED
+                    || status == STATUS_SKIPPED
+                {
                     self.store.remove(i);
                     continue;
                 }
@@ -59,17 +65,22 @@ impl TransferQueue {
         }
     }
 
+    fn reset_policy(&self) {
+        *self.conflict_policy.borrow_mut() = None;
+    }
+
     /// Start processing the queue if not already running.
     pub fn start_processing(
         queue: &Rc<TransferQueue>,
         connection: &Rc<ConnectionHandle>,
         left_panel: &FilePanel,
         right_panel: &FilePanel,
+        window: &crate::window::CargoWindow,
     ) {
         if queue.is_processing.get() {
             return;
         }
-        Self::process_next(queue, connection, left_panel, right_panel);
+        Self::process_next(queue, connection, left_panel, right_panel, window);
     }
 
     fn process_next(
@@ -77,6 +88,7 @@ impl TransferQueue {
         connection: &Rc<ConnectionHandle>,
         left_panel: &FilePanel,
         right_panel: &FilePanel,
+        window: &crate::window::CargoWindow,
     ) {
         // Find next queued item
         let mut next_item: Option<TransferItem> = None;
@@ -92,6 +104,7 @@ impl TransferQueue {
 
         let Some(item) = next_item else {
             queue.is_processing.set(false);
+            queue.reset_policy();
             return;
         };
 
@@ -120,16 +133,120 @@ impl TransferQueue {
         let queue_clone = queue.clone();
         let left_weak = left_panel.downgrade();
         let right_weak = right_panel.downgrade();
+        let window_weak = window.downgrade();
         let direction = item.direction();
         let local_path = PathBuf::from(item.local_path());
         let remote_path = item.remote_path();
+        let filename = item.filename();
 
         glib::spawn_future_local(async move {
+            let mut final_local_path = local_path.clone();
+            let mut final_remote_path = remote_path.clone();
+
+            // --- Conflict check ---
+            let conflict_info = if direction == DIRECTION_UPLOAD {
+                let remote_dir = remote_path
+                    .rsplit_once('/')
+                    .map(|(d, _)| if d.is_empty() { "/" } else { d })
+                    .unwrap_or("/");
+                match conn.list_dir(remote_dir).await {
+                    Ok(entries) => conflict_dialog::remote_file_exists(&entries, &filename)
+                        .map(|e| (e.size, e.modified)),
+                    Err(_) => None,
+                }
+            } else {
+                if final_local_path.exists() && final_local_path.is_file() {
+                    conflict_dialog::local_file_info(&final_local_path)
+                } else {
+                    None
+                }
+            };
+
+            if let Some((dest_size, dest_modified)) = conflict_info {
+                let remembered = *queue_clone.conflict_policy.borrow();
+
+                let action = if let Some(policy) = remembered {
+                    policy
+                } else {
+                    let Some(window) = window_weak.upgrade() else {
+                        queue_clone.is_processing.set(false);
+                        return;
+                    };
+                    match conflict_dialog::show_overwrite_dialog(&window, &filename).await {
+                        Some(resolution) => {
+                            if resolution.apply_to_queue {
+                                *queue_clone.conflict_policy.borrow_mut() =
+                                    Some(resolution.action);
+                            }
+                            resolution.action
+                        }
+                        None => ConflictAction::Skip,
+                    }
+                };
+
+                // Get source metadata
+                let (source_size, source_modified) = if direction == DIRECTION_UPLOAD {
+                    conflict_dialog::local_file_info(&local_path).unwrap_or((0, None))
+                } else {
+                    let remote_dir = remote_path
+                        .rsplit_once('/')
+                        .map(|(d, _)| if d.is_empty() { "/" } else { d })
+                        .unwrap_or("/");
+                    match conn.list_dir(remote_dir).await {
+                        Ok(entries) => {
+                            conflict_dialog::remote_file_exists(&entries, &filename)
+                                .map(|e| (e.size, e.modified))
+                                .unwrap_or((0, None))
+                        }
+                        Err(_) => (0, None),
+                    }
+                };
+
+                let dest_path_str = if direction == DIRECTION_UPLOAD {
+                    remote_path.clone()
+                } else {
+                    local_path.display().to_string()
+                };
+
+                let (should_proceed, new_dest) = conflict_dialog::should_transfer(
+                    action,
+                    source_size,
+                    source_modified,
+                    dest_size,
+                    dest_modified,
+                    &dest_path_str,
+                );
+
+                if !should_proceed {
+                    item.set_status(STATUS_SKIPPED);
+
+                    if let (Some(left), Some(right), Some(win)) = (
+                        left_weak.upgrade(),
+                        right_weak.upgrade(),
+                        window_weak.upgrade(),
+                    ) {
+                        TransferQueue::process_next(
+                            &queue_clone, &conn, &left, &right, &win,
+                        );
+                    } else {
+                        queue_clone.is_processing.set(false);
+                    }
+                    return;
+                }
+
+                if direction == DIRECTION_UPLOAD {
+                    final_remote_path = new_dest;
+                } else {
+                    final_local_path = PathBuf::from(&new_dest);
+                }
+            }
+
+            // --- Execute transfer ---
             let result = if direction == DIRECTION_UPLOAD {
-                conn.upload(&local_path, &remote_path, Some(progress_tx))
+                conn.upload(&final_local_path, &final_remote_path, Some(progress_tx))
                     .await
             } else {
-                conn.download(&remote_path, &local_path, Some(progress_tx))
+                conn.download(&final_remote_path, &final_local_path, Some(progress_tx))
                     .await
             };
 
@@ -154,10 +271,12 @@ impl TransferQueue {
             }
 
             // Process next item in queue
-            if let (Some(left), Some(right)) =
-                (left_weak.upgrade(), right_weak.upgrade())
-            {
-                TransferQueue::process_next(&queue_clone, &conn, &left, &right);
+            if let (Some(left), Some(right), Some(win)) = (
+                left_weak.upgrade(),
+                right_weak.upgrade(),
+                window_weak.upgrade(),
+            ) {
+                TransferQueue::process_next(&queue_clone, &conn, &left, &right, &win);
             } else {
                 queue_clone.is_processing.set(false);
             }

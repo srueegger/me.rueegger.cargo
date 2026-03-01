@@ -449,6 +449,7 @@ impl CargoWindow {
                     &conn,
                     &imp.left_panel,
                     &imp.right_panel,
+                    &window,
                 );
             }
         });

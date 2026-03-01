@@ -19,6 +19,7 @@ pub const STATUS_QUEUED: u32 = 0;
 pub const STATUS_ACTIVE: u32 = 1;
 pub const STATUS_COMPLETED: u32 = 2;
 pub const STATUS_FAILED: u32 = 3;
+pub const STATUS_SKIPPED: u32 = 4;
 
 mod imp {
     use super::*;
@@ -127,6 +128,7 @@ impl TransferItem {
                     gettext("Failed: %s").replace("%s", &msg)
                 }
             }
+            STATUS_SKIPPED => gettext("Skipped"),
             _ => String::new(),
         }
     }

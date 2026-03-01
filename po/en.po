@@ -292,3 +292,47 @@ msgstr "Failed"
 #: src/transfer_item.rs
 msgid "Failed: %s"
 msgstr "Failed: %s"
+
+#: src/transfer_item.rs
+msgid "Skipped"
+msgstr "Skipped"
+
+#: src/conflict_dialog.rs
+msgid "File already exists"
+msgstr "File already exists"
+
+#: src/conflict_dialog.rs
+msgid "The file '%s' already exists at the destination. What would you like to do?"
+msgstr "The file '%s' already exists at the destination. What would you like to do?"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite"
+msgstr "Overwrite"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite if size differs"
+msgstr "Overwrite if size differs"
+
+#: src/conflict_dialog.rs
+msgid "Overwrite if source is newer"
+msgstr "Overwrite if source is newer"
+
+#: src/conflict_dialog.rs
+msgid "Skip"
+msgstr "Skip"
+
+#: src/conflict_dialog.rs
+msgid "Rename (append number)"
+msgstr "Rename (append number)"
+
+#: src/conflict_dialog.rs
+msgid "Apply to current queue"
+msgstr "Apply to current queue"
+
+#: src/conflict_dialog.rs
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/conflict_dialog.rs
+msgid "OK"
+msgstr "OK"
