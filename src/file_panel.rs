@@ -93,6 +93,16 @@ mod imp {
     }
 
     impl ObjectImpl for FilePanel {
+        fn signals() -> &'static [glib::subclass::Signal] {
+            static SIGNALS: std::sync::OnceLock<Vec<glib::subclass::Signal>> =
+                std::sync::OnceLock::new();
+            SIGNALS.get_or_init(|| {
+                vec![glib::subclass::Signal::builder("file-activated")
+                    .param_types([String::static_type()])
+                    .build()]
+            })
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
 
@@ -525,6 +535,8 @@ impl FilePanel {
                     }
                 }
                 self.emit_sync(SyncEvent::EnterDir(dir_name));
+            } else {
+                self.emit_by_name::<()>("file-activated", &[&item.name()]);
             }
         }
     }

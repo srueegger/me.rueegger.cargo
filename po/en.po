@@ -240,6 +240,10 @@ msgid "Connecting…"
 msgstr "Connecting…"
 
 #: src/window.rs
+msgid "Not connected to a server"
+msgstr "Not connected to a server"
+
+#: src/window.rs
 msgid "No files selected for upload"
 msgstr "No files selected for upload"
 

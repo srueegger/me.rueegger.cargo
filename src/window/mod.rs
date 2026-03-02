@@ -129,6 +129,7 @@ mod imp {
             obj.setup_site_manager_action();
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
+            obj.setup_double_click_transfer();
             obj.setup_sync_navigation();
             obj.setup_refresh_button();
             obj.setup_drag_and_drop();

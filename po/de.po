@@ -270,6 +270,10 @@ msgid "Connecting…"
 msgstr "Verbinde …"
 
 #: src/window.rs
+msgid "Not connected to a server"
+msgstr "Nicht mit einem Server verbunden"
+
+#: src/window.rs
 msgid "No files selected for upload"
 msgstr "Keine Dateien zum Hochladen ausgewählt"
 
