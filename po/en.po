@@ -313,6 +313,42 @@ msgstr "Failed: %s"
 msgid "Skipped"
 msgstr "Skipped"
 
+#
+# ── Transfer notifications ─────────────────────────────────
+#
+
+#: src/transfer/queue.rs
+msgid "Transfer Complete"
+msgstr "Transfer Complete"
+
+#: src/transfer/queue.rs
+msgid "Transfer failed"
+msgstr "Transfer failed"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully uploaded"
+msgstr "'%s' successfully uploaded"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully downloaded"
+msgstr "'%s' successfully downloaded"
+
+#: src/transfer/queue.rs
+msgid "Transfer completed with %d errors"
+msgstr "Transfer completed with %d errors"
+
+#: src/transfer/queue.rs
+msgid "All files successfully uploaded"
+msgstr "All files successfully uploaded"
+
+#: src/transfer/queue.rs
+msgid "All files successfully downloaded"
+msgstr "All files successfully downloaded"
+
+#: src/transfer/queue.rs
+msgid "All files successfully transferred"
+msgstr "All files successfully transferred"
+
 #: src/window.rs
 msgid "Rename"
 msgstr "Rename"

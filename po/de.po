@@ -356,6 +356,42 @@ msgid "Skipped"
 msgstr "Übersprungen"
 
 #
+# ── Transfer notifications ─────────────────────────────────
+#
+
+#: src/transfer/queue.rs
+msgid "Transfer Complete"
+msgstr "Übertragung abgeschlossen"
+
+#: src/transfer/queue.rs
+msgid "Transfer failed"
+msgstr "Übertragung fehlgeschlagen"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully uploaded"
+msgstr "'%s' erfolgreich hochgeladen"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully downloaded"
+msgstr "'%s' erfolgreich heruntergeladen"
+
+#: src/transfer/queue.rs
+msgid "Transfer completed with %d errors"
+msgstr "Übertragung mit %d Fehlern abgeschlossen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully uploaded"
+msgstr "Alle Dateien erfolgreich hochgeladen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully downloaded"
+msgstr "Alle Dateien erfolgreich heruntergeladen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully transferred"
+msgstr "Alle Dateien erfolgreich übertragen"
+
+#
 # ── conflict_dialog.rs ──────────────────────────────────────
 #
 

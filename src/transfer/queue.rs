@@ -10,6 +10,7 @@ use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use gettextrs::gettext;
 use gtk::{gio, glib, prelude::*};
 
 use crate::dialogs::{self, ConflictAction};
@@ -105,6 +106,7 @@ impl TransferQueue {
         let Some(item) = next_item else {
             queue.is_processing.set(false);
             queue.reset_policy();
+            Self::send_completion_notification(queue);
             return;
         };
 
@@ -281,5 +283,67 @@ impl TransferQueue {
                 queue_clone.is_processing.set(false);
             }
         });
+    }
+
+    fn send_completion_notification(queue: &Rc<TransferQueue>) {
+        let Some(app) = gio::Application::default() else {
+            return;
+        };
+
+        let mut completed_uploads = 0u32;
+        let mut completed_downloads = 0u32;
+        let mut failed = 0u32;
+        let mut last_filename = String::new();
+        let mut last_direction = DIRECTION_UPLOAD;
+
+        for i in 0..queue.store.n_items() {
+            let Some(obj) = queue.store.item(i) else {
+                continue;
+            };
+            let item: TransferItem = obj.downcast().unwrap();
+            match item.status() {
+                STATUS_COMPLETED => {
+                    last_filename = item.filename();
+                    last_direction = item.direction();
+                    if item.direction() == DIRECTION_UPLOAD {
+                        completed_uploads += 1;
+                    } else {
+                        completed_downloads += 1;
+                    }
+                }
+                STATUS_FAILED => {
+                    failed += 1;
+                }
+                _ => {}
+            }
+        }
+
+        let total_completed = completed_uploads + completed_downloads;
+        if total_completed == 0 && failed == 0 {
+            return;
+        }
+
+        let body = if failed > 0 && total_completed == 0 {
+            gettext("Transfer failed")
+        } else if total_completed == 1 && failed == 0 {
+            if last_direction == DIRECTION_UPLOAD {
+                gettext("'%s' successfully uploaded").replace("%s", &last_filename)
+            } else {
+                gettext("'%s' successfully downloaded").replace("%s", &last_filename)
+            }
+        } else if failed > 0 {
+            gettext("Transfer completed with %d errors")
+                .replace("%d", &failed.to_string())
+        } else if completed_downloads == 0 {
+            gettext("All files successfully uploaded")
+        } else if completed_uploads == 0 {
+            gettext("All files successfully downloaded")
+        } else {
+            gettext("All files successfully transferred")
+        };
+
+        let notification = gio::Notification::new(&gettext("Transfer Complete"));
+        notification.set_body(Some(&body));
+        app.send_notification(Some("transfer-complete"), &notification);
     }
 }
