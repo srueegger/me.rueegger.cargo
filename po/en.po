@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.5.0\n"
+"Project-Id-Version: cargo-app 0.6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -46,6 +46,30 @@ msgstr ""
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Initial release with FTP, FTPS, and SFTP support."
 msgstr "Initial release with FTP, FTPS, and SFTP support."
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Double-click files to transfer them instantly"
+msgstr "Double-click files to transfer them instantly"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Desktop notifications for completed and failed transfers"
+msgstr "Desktop notifications for completed and failed transfers"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Keyboard shortcuts dialog"
+msgstr "Keyboard shortcuts dialog"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Nautilus-style circular progress indicator in the sidebar"
+msgstr "Nautilus-style circular progress indicator in the sidebar"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Sidebar context menu to edit, delete, or disconnect sites"
+msgstr "Sidebar context menu to edit, delete, or disconnect sites"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Connection error handling with user-visible messages"
+msgstr "Connection error handling with user-visible messages"
 
 #: data/ui/window.ui
 msgid "Site Manager"
