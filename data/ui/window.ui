@@ -80,6 +80,7 @@
             <child type="top">
               <object class="AdwHeaderBar" id="header_bar">
                 <property name="show-start-title-buttons">false</property>
+                <property name="show-title">false</property>
                 <child type="start">
                   <object class="GtkToggleButton" id="sidebar_button">
                     <property name="icon-name">sidebar-show-symbolic</property>
