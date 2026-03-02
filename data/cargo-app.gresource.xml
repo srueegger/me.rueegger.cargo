@@ -4,6 +4,7 @@
     <file>ui/window.ui</file>
     <file>ui/file_panel.ui</file>
     <file>ui/site_manager_dialog.ui</file>
+    <file>ui/shortcuts.ui</file>
     <file>style.css</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/cargo-ftp-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/cargo-ftps-symbolic.svg</file>

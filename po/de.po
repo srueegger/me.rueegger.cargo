@@ -98,8 +98,48 @@ msgid "Clear completed transfers"
 msgstr "Abgeschlossene Übertragungen entfernen"
 
 #: data/ui/window.ui
+msgid "_Keyboard Shortcuts"
+msgstr "_Tastenkürzel"
+
+#: data/ui/window.ui
 msgid "_About Cargo"
 msgstr "_Über Cargo"
+
+#
+# ── Shortcuts Window ─────────────────────────────────────────
+#
+
+#: data/ui/shortcuts.ui
+msgid "Keyboard Shortcuts"
+msgstr "Tastenkürzel"
+
+#: data/ui/shortcuts.ui
+msgid "Quit"
+msgstr "Beenden"
+
+#: data/ui/shortcuts.ui
+msgid "File Browsing"
+msgstr "Dateien durchsuchen"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Hidden Files"
+msgstr "Versteckte Dateien umschalten"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Sidebar"
+msgstr "Seitenleiste umschalten"
+
+#: data/ui/shortcuts.ui
+msgid "Transfer"
+msgstr "Übertragung"
+
+#: data/ui/shortcuts.ui
+msgid "Upload Selected Files"
+msgstr "Ausgewählte Dateien hochladen"
+
+#: data/ui/shortcuts.ui
+msgid "Download Selected Files"
+msgstr "Ausgewählte Dateien herunterladen"
 
 #
 # ── File Panel UI ─────────────────────────────────────────────
@@ -524,10 +564,6 @@ msgstr "Berechtigungen ändern fehlgeschlagen: %s"
 #
 # ── sidebar ──────────────────────────────────────────────────
 #
-
-#: data/ui/window.ui
-msgid "Toggle Sidebar"
-msgstr "Seitenleiste ein-/ausblenden"
 
 #: src/window.rs
 msgid "Connect to %s"

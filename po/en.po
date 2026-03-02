@@ -84,8 +84,48 @@ msgid "Clear completed transfers"
 msgstr "Clear completed transfers"
 
 #: data/ui/window.ui
+msgid "_Keyboard Shortcuts"
+msgstr "_Keyboard Shortcuts"
+
+#: data/ui/window.ui
 msgid "_About Cargo"
 msgstr "_About Cargo"
+
+#
+# ── Shortcuts Window ─────────────────────────────────────────
+#
+
+#: data/ui/shortcuts.ui
+msgid "Keyboard Shortcuts"
+msgstr "Keyboard Shortcuts"
+
+#: data/ui/shortcuts.ui
+msgid "Quit"
+msgstr "Quit"
+
+#: data/ui/shortcuts.ui
+msgid "File Browsing"
+msgstr "File Browsing"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Hidden Files"
+msgstr "Toggle Hidden Files"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Sidebar"
+msgstr "Toggle Sidebar"
+
+#: data/ui/shortcuts.ui
+msgid "Transfer"
+msgstr "Transfer"
+
+#: data/ui/shortcuts.ui
+msgid "Upload Selected Files"
+msgstr "Upload Selected Files"
+
+#: data/ui/shortcuts.ui
+msgid "Download Selected Files"
+msgstr "Download Selected Files"
 
 #: data/ui/file_panel.ui
 msgid "Go to parent directory"
@@ -470,10 +510,6 @@ msgstr "Permissions changed"
 #: src/window.rs
 msgid "Change permissions failed: %s"
 msgstr "Change permissions failed: %s"
-
-#: data/ui/window.ui
-msgid "Toggle Sidebar"
-msgstr "Toggle Sidebar"
 
 #: src/window.rs
 msgid "Connect to %s"

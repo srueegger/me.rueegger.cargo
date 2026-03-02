@@ -96,6 +96,12 @@ impl CargoApplication {
 
         self.set_accels_for_action("app.quit", &["<primary>q"]);
         self.set_accels_for_action("win.site-manager", &["<primary>s"]);
+        self.set_accels_for_action("win.refresh", &["F5"]);
+        self.set_accels_for_action("win.toggle-hidden", &["<primary>h"]);
+        self.set_accels_for_action("win.toggle-sidebar", &["F9"]);
+        self.set_accels_for_action("win.upload", &["<primary>u"]);
+        self.set_accels_for_action("win.download", &["<primary>d"]);
+        self.set_accels_for_action("win.show-shortcuts", &["<primary>question"]);
     }
 
     fn show_about(&self) {

@@ -241,5 +241,82 @@ impl CargoWindow {
             }
         ));
         self.add_action(&sm_action);
+
+        // Refresh (F5)
+        let refresh_action = gio::SimpleAction::new("refresh", None);
+        refresh_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.imp().left_panel.reload();
+                window.imp().right_panel.reload();
+            }
+        ));
+        self.add_action(&refresh_action);
+
+        // Toggle hidden files (Ctrl+H)
+        let hidden_action = gio::SimpleAction::new("toggle-hidden", None);
+        hidden_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                let btn = &window.imp().hidden_files_button;
+                btn.set_active(!btn.is_active());
+            }
+        ));
+        self.add_action(&hidden_action);
+
+        // Toggle sidebar (F9)
+        let sidebar_action = gio::SimpleAction::new("toggle-sidebar", None);
+        sidebar_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                let btn = &window.imp().sidebar_button;
+                btn.set_active(!btn.is_active());
+            }
+        ));
+        self.add_action(&sidebar_action);
+
+        // Upload selected (Ctrl+U)
+        let upload_action = gio::SimpleAction::new("upload", None);
+        upload_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_upload_clicked();
+            }
+        ));
+        self.add_action(&upload_action);
+
+        // Download selected (Ctrl+D)
+        let download_action = gio::SimpleAction::new("download", None);
+        download_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_download_clicked();
+            }
+        ));
+        self.add_action(&download_action);
+
+        // Show shortcuts (Ctrl+?)
+        let shortcuts_action = gio::SimpleAction::new("show-shortcuts", None);
+        shortcuts_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.show_shortcuts();
+            }
+        ));
+        self.add_action(&shortcuts_action);
+    }
+
+    fn show_shortcuts(&self) {
+        let builder = gtk::Builder::from_resource("/me/rueegger/cargo/ui/shortcuts.ui");
+        let dialog = builder
+            .object::<adw::ShortcutsDialog>("shortcuts_dialog")
+            .unwrap();
+        dialog.present(Some(self));
     }
 }
