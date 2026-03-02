@@ -52,6 +52,25 @@
                 </child>
               </object>
             </property>
+            <child type="bottom">
+              <object class="GtkRevealer" id="progress_revealer">
+                <property name="reveal-child">false</property>
+                <property name="transition-type">slide-up</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkSeparator"/>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="progress_box">
+                        <property name="orientation">horizontal</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
           </object>
         </property>
 
@@ -61,6 +80,7 @@
             <child type="top">
               <object class="AdwHeaderBar" id="header_bar">
                 <property name="show-start-title-buttons">false</property>
+                <property name="show-title">false</property>
                 <child type="start">
                   <object class="GtkToggleButton" id="sidebar_button">
                     <property name="icon-name">sidebar-show-symbolic</property>
@@ -227,6 +247,10 @@
       </item>
     </section>
     <section>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
+        <attribute name="action">win.show-shortcuts</attribute>
+      </item>
       <item>
         <attribute name="label" translatable="yes">_About Cargo</attribute>
         <attribute name="action">app.about</attribute>

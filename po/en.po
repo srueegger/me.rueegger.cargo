@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.5.0\n"
+"Project-Id-Version: cargo-app 0.6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -47,6 +47,30 @@ msgstr ""
 msgid "Initial release with FTP, FTPS, and SFTP support."
 msgstr "Initial release with FTP, FTPS, and SFTP support."
 
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Double-click files to transfer them instantly"
+msgstr "Double-click files to transfer them instantly"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Desktop notifications for completed and failed transfers"
+msgstr "Desktop notifications for completed and failed transfers"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Keyboard shortcuts dialog"
+msgstr "Keyboard shortcuts dialog"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Nautilus-style circular progress indicator in the sidebar"
+msgstr "Nautilus-style circular progress indicator in the sidebar"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Sidebar context menu to edit, delete, or disconnect sites"
+msgstr "Sidebar context menu to edit, delete, or disconnect sites"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Connection error handling with user-visible messages"
+msgstr "Connection error handling with user-visible messages"
+
 #: data/ui/window.ui
 msgid "Site Manager"
 msgstr "Site Manager"
@@ -84,8 +108,48 @@ msgid "Clear completed transfers"
 msgstr "Clear completed transfers"
 
 #: data/ui/window.ui
+msgid "_Keyboard Shortcuts"
+msgstr "_Keyboard Shortcuts"
+
+#: data/ui/window.ui
 msgid "_About Cargo"
 msgstr "_About Cargo"
+
+#
+# ── Shortcuts Window ─────────────────────────────────────────
+#
+
+#: data/ui/shortcuts.ui
+msgid "Keyboard Shortcuts"
+msgstr "Keyboard Shortcuts"
+
+#: data/ui/shortcuts.ui
+msgid "Quit"
+msgstr "Quit"
+
+#: data/ui/shortcuts.ui
+msgid "File Browsing"
+msgstr "File Browsing"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Hidden Files"
+msgstr "Toggle Hidden Files"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Sidebar"
+msgstr "Toggle Sidebar"
+
+#: data/ui/shortcuts.ui
+msgid "Transfer"
+msgstr "Transfer"
+
+#: data/ui/shortcuts.ui
+msgid "Upload Selected Files"
+msgstr "Upload Selected Files"
+
+#: data/ui/shortcuts.ui
+msgid "Download Selected Files"
+msgstr "Download Selected Files"
 
 #: data/ui/file_panel.ui
 msgid "Go to parent directory"
@@ -240,6 +304,10 @@ msgid "Connecting…"
 msgstr "Connecting…"
 
 #: src/window.rs
+msgid "Not connected to a server"
+msgstr "Not connected to a server"
+
+#: src/window.rs
 msgid "No files selected for upload"
 msgstr "No files selected for upload"
 
@@ -308,6 +376,42 @@ msgstr "Failed: %s"
 #: src/transfer_item.rs
 msgid "Skipped"
 msgstr "Skipped"
+
+#
+# ── Transfer notifications ─────────────────────────────────
+#
+
+#: src/transfer/queue.rs
+msgid "Transfer Complete"
+msgstr "Transfer Complete"
+
+#: src/transfer/queue.rs
+msgid "Transfer failed"
+msgstr "Transfer failed"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully uploaded"
+msgstr "'%s' successfully uploaded"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully downloaded"
+msgstr "'%s' successfully downloaded"
+
+#: src/transfer/queue.rs
+msgid "Transfer completed with %d errors"
+msgstr "Transfer completed with %d errors"
+
+#: src/transfer/queue.rs
+msgid "All files successfully uploaded"
+msgstr "All files successfully uploaded"
+
+#: src/transfer/queue.rs
+msgid "All files successfully downloaded"
+msgstr "All files successfully downloaded"
+
+#: src/transfer/queue.rs
+msgid "All files successfully transferred"
+msgstr "All files successfully transferred"
 
 #: src/window.rs
 msgid "Rename"
@@ -431,10 +535,6 @@ msgstr "Permissions changed"
 msgid "Change permissions failed: %s"
 msgstr "Change permissions failed: %s"
 
-#: data/ui/window.ui
-msgid "Toggle Sidebar"
-msgstr "Toggle Sidebar"
-
 #: src/window.rs
 msgid "Connect to %s"
 msgstr "Connect to %s"
@@ -446,3 +546,27 @@ msgstr "Enter password"
 #: src/window.rs
 msgid "Enter passphrase for key"
 msgstr "Enter passphrase for key"
+
+#
+# ── progress indicator ───────────────────────────────────────
+#
+
+#: src/window/progress_indicator.rs
+msgid "Show File Operations"
+msgstr "Show File Operations"
+
+#
+# ── sidebar context menu ─────────────────────────────────────
+#
+
+#: src/window/sidebar.rs
+msgid "Edit"
+msgstr "Edit"
+
+#: src/window/sidebar.rs
+msgid "Delete Connection"
+msgstr "Delete Connection"
+
+#: src/window/sidebar.rs
+msgid "Are you sure you want to delete '%s'?"
+msgstr "Are you sure you want to delete '%s'?"

@@ -2,3 +2,16 @@
     outline: 2px dashed @accent_color;
     outline-offset: -2px;
 }
+
+.progress-indicator > menubutton > button {
+    padding: 8px 12px;
+    border-radius: 0;
+}
+
+.progress-indicator > menubutton > button:hover {
+    background-color: alpha(currentColor, 0.07);
+}
+
+.progress-indicator > menubutton > button:checked {
+    background-color: alpha(currentColor, 0.1);
+}

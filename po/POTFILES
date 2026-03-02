@@ -3,6 +3,7 @@ data/me.rueegger.cargo.metainfo.xml.in
 data/ui/window.ui
 data/ui/file_panel.ui
 data/ui/site_manager_dialog.ui
+data/ui/shortcuts.ui
 src/application.rs
 src/window/mod.rs
 src/window/sidebar.rs

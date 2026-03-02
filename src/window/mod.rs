@@ -13,6 +13,7 @@ mod file_operations;
 mod drag_drop;
 mod context_menus;
 mod sync_nav;
+mod progress_indicator;
 
 use std::rc::Rc;
 
@@ -79,12 +80,18 @@ mod imp {
         pub sidebar_list: TemplateChild<gtk::ListBox>,
         #[template_child]
         pub sidebar_separator: TemplateChild<gtk::Separator>,
+        #[template_child]
+        pub progress_revealer: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub progress_box: TemplateChild<gtk::Box>,
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
         pub syncing: Cell<bool>,
         pub connected_site_id: RefCell<Option<String>>,
         pub left_context_menu: RefCell<Option<gtk::PopoverMenu>>,
         pub right_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub sidebar_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub sidebar_context_site_id: RefCell<Option<String>>,
     }
 
     #[glib::object_subclass]
@@ -114,6 +121,9 @@ mod imp {
             if let Some(popover) = self.right_context_menu.take() {
                 popover.unparent();
             }
+            if let Some(popover) = self.sidebar_context_menu.take() {
+                popover.unparent();
+            }
         }
 
         fn constructed(&self) {
@@ -125,14 +135,18 @@ mod imp {
             obj.load_window_state();
             obj.setup_hidden_files_toggle();
             obj.setup_sidebar();
+            obj.setup_sidebar_context_menu();
             obj.setup_paned_position();
             obj.setup_site_manager_action();
             obj.setup_transfer_buttons();
             obj.setup_transfer_queue_ui();
+            obj.setup_double_click_transfer();
             obj.setup_sync_navigation();
             obj.setup_refresh_button();
             obj.setup_drag_and_drop();
             obj.setup_context_menus();
+            obj.setup_connection_error_handler();
+            obj.setup_progress_indicator();
         }
     }
 
@@ -239,5 +253,82 @@ impl CargoWindow {
             }
         ));
         self.add_action(&sm_action);
+
+        // Refresh (F5)
+        let refresh_action = gio::SimpleAction::new("refresh", None);
+        refresh_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.imp().left_panel.reload();
+                window.imp().right_panel.reload();
+            }
+        ));
+        self.add_action(&refresh_action);
+
+        // Toggle hidden files (Ctrl+H)
+        let hidden_action = gio::SimpleAction::new("toggle-hidden", None);
+        hidden_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                let btn = &window.imp().hidden_files_button;
+                btn.set_active(!btn.is_active());
+            }
+        ));
+        self.add_action(&hidden_action);
+
+        // Toggle sidebar (F9)
+        let sidebar_action = gio::SimpleAction::new("toggle-sidebar", None);
+        sidebar_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                let btn = &window.imp().sidebar_button;
+                btn.set_active(!btn.is_active());
+            }
+        ));
+        self.add_action(&sidebar_action);
+
+        // Upload selected (Ctrl+U)
+        let upload_action = gio::SimpleAction::new("upload", None);
+        upload_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_upload_clicked();
+            }
+        ));
+        self.add_action(&upload_action);
+
+        // Download selected (Ctrl+D)
+        let download_action = gio::SimpleAction::new("download", None);
+        download_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.on_download_clicked();
+            }
+        ));
+        self.add_action(&download_action);
+
+        // Show shortcuts (Ctrl+?)
+        let shortcuts_action = gio::SimpleAction::new("show-shortcuts", None);
+        shortcuts_action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.show_shortcuts();
+            }
+        ));
+        self.add_action(&shortcuts_action);
+    }
+
+    fn show_shortcuts(&self) {
+        let builder = gtk::Builder::from_resource("/me/rueegger/cargo/ui/shortcuts.ui");
+        let dialog = builder
+            .object::<adw::ShortcutsDialog>("shortcuts_dialog")
+            .unwrap();
+        dialog.present(Some(self));
     }
 }

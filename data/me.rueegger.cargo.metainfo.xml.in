@@ -38,6 +38,18 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.6.0" date="2026-03-02">
+      <description>
+        <ul>
+          <li>Double-click files to transfer them instantly</li>
+          <li>Desktop notifications for completed and failed transfers</li>
+          <li>Keyboard shortcuts dialog</li>
+          <li>Nautilus-style circular progress indicator in the sidebar</li>
+          <li>Sidebar context menu to edit, delete, or disconnect sites</li>
+          <li>Connection error handling with user-visible messages</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-03-01">
       <description>
         <p>Add sidebar with quick-connect, refresh button, custom protocol icons, and reorganize codebase</p>

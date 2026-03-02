@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.5.0\n"
+"Project-Id-Version: cargo-app 0.6.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -57,6 +57,30 @@ msgstr ""
 msgid "Initial release with FTP, FTPS, and SFTP support."
 msgstr "Erstveröffentlichung mit FTP-, FTPS- und SFTP-Unterstützung."
 
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Double-click files to transfer them instantly"
+msgstr "Dateien per Doppelklick sofort übertragen"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Desktop notifications for completed and failed transfers"
+msgstr "Desktop-Benachrichtigungen für abgeschlossene und fehlgeschlagene Übertragungen"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Keyboard shortcuts dialog"
+msgstr "Tastenkürzel-Dialog"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Nautilus-style circular progress indicator in the sidebar"
+msgstr "Kreisförmige Fortschrittsanzeige im Nautilus-Stil in der Seitenleiste"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Sidebar context menu to edit, delete, or disconnect sites"
+msgstr "Kontextmenü in der Seitenleiste zum Bearbeiten, Löschen oder Trennen von Verbindungen"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Connection error handling with user-visible messages"
+msgstr "Verbindungsfehlerbehandlung mit sichtbaren Fehlermeldungen"
+
 #
 # ── Window UI ─────────────────────────────────────────────────
 #
@@ -98,8 +122,48 @@ msgid "Clear completed transfers"
 msgstr "Abgeschlossene Übertragungen entfernen"
 
 #: data/ui/window.ui
+msgid "_Keyboard Shortcuts"
+msgstr "_Tastenkürzel"
+
+#: data/ui/window.ui
 msgid "_About Cargo"
 msgstr "_Über Cargo"
+
+#
+# ── Shortcuts Window ─────────────────────────────────────────
+#
+
+#: data/ui/shortcuts.ui
+msgid "Keyboard Shortcuts"
+msgstr "Tastenkürzel"
+
+#: data/ui/shortcuts.ui
+msgid "Quit"
+msgstr "Beenden"
+
+#: data/ui/shortcuts.ui
+msgid "File Browsing"
+msgstr "Dateien durchsuchen"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Hidden Files"
+msgstr "Versteckte Dateien umschalten"
+
+#: data/ui/shortcuts.ui
+msgid "Toggle Sidebar"
+msgstr "Seitenleiste umschalten"
+
+#: data/ui/shortcuts.ui
+msgid "Transfer"
+msgstr "Übertragung"
+
+#: data/ui/shortcuts.ui
+msgid "Upload Selected Files"
+msgstr "Ausgewählte Dateien hochladen"
+
+#: data/ui/shortcuts.ui
+msgid "Download Selected Files"
+msgstr "Ausgewählte Dateien herunterladen"
 
 #
 # ── File Panel UI ─────────────────────────────────────────────
@@ -270,6 +334,10 @@ msgid "Connecting…"
 msgstr "Verbinde …"
 
 #: src/window.rs
+msgid "Not connected to a server"
+msgstr "Nicht mit einem Server verbunden"
+
+#: src/window.rs
 msgid "No files selected for upload"
 msgstr "Keine Dateien zum Hochladen ausgewählt"
 
@@ -350,6 +418,42 @@ msgstr "Fehlgeschlagen: %s"
 #: src/transfer_item.rs
 msgid "Skipped"
 msgstr "Übersprungen"
+
+#
+# ── Transfer notifications ─────────────────────────────────
+#
+
+#: src/transfer/queue.rs
+msgid "Transfer Complete"
+msgstr "Übertragung abgeschlossen"
+
+#: src/transfer/queue.rs
+msgid "Transfer failed"
+msgstr "Übertragung fehlgeschlagen"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully uploaded"
+msgstr "'%s' erfolgreich hochgeladen"
+
+#: src/transfer/queue.rs
+msgid "'%s' successfully downloaded"
+msgstr "'%s' erfolgreich heruntergeladen"
+
+#: src/transfer/queue.rs
+msgid "Transfer completed with %d errors"
+msgstr "Übertragung mit %d Fehlern abgeschlossen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully uploaded"
+msgstr "Alle Dateien erfolgreich hochgeladen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully downloaded"
+msgstr "Alle Dateien erfolgreich heruntergeladen"
+
+#: src/transfer/queue.rs
+msgid "All files successfully transferred"
+msgstr "Alle Dateien erfolgreich übertragen"
 
 #
 # ── conflict_dialog.rs ──────────────────────────────────────
@@ -485,10 +589,6 @@ msgstr "Berechtigungen ändern fehlgeschlagen: %s"
 # ── sidebar ──────────────────────────────────────────────────
 #
 
-#: data/ui/window.ui
-msgid "Toggle Sidebar"
-msgstr "Seitenleiste ein-/ausblenden"
-
 #: src/window.rs
 msgid "Connect to %s"
 msgstr "Verbinden mit %s"
@@ -500,3 +600,27 @@ msgstr "Passwort eingeben"
 #: src/window.rs
 msgid "Enter passphrase for key"
 msgstr "Passphrase für Schlüssel eingeben"
+
+#
+# ── progress indicator ───────────────────────────────────────
+#
+
+#: src/window/progress_indicator.rs
+msgid "Show File Operations"
+msgstr "Dateioperationen anzeigen"
+
+#
+# ── sidebar context menu ─────────────────────────────────────
+#
+
+#: src/window/sidebar.rs
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: src/window/sidebar.rs
+msgid "Delete Connection"
+msgstr "Verbindung löschen"
+
+#: src/window/sidebar.rs
+msgid "Are you sure you want to delete '%s'?"
+msgstr "Möchten Sie '%s' wirklich löschen?"

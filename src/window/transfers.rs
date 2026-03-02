@@ -293,4 +293,55 @@ impl CargoWindow {
             TransferDirection::Download,
         );
     }
+
+    pub(crate) fn setup_double_click_transfer(&self) {
+        let imp = self.imp();
+
+        // Left panel: double-click file → upload
+        imp.left_panel.connect_closure(
+            "file-activated",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = window)]
+                self,
+                move |_panel: crate::file_panel::FilePanel, filename: String| {
+                    if window.get_connection().is_none() {
+                        let toast =
+                            adw::Toast::new(&gettext("Not connected to a server"));
+                        window.imp().toast_overlay.add_toast(toast);
+                        return;
+                    }
+                    let imp = window.imp();
+                    window.enqueue_items(
+                        vec![(filename, false)],
+                        imp.left_panel.current_path(),
+                        imp.right_panel.remote_path(),
+                        TransferDirection::Upload,
+                    );
+                }
+            ),
+        );
+
+        // Right panel: double-click file → download
+        imp.right_panel.connect_closure(
+            "file-activated",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = window)]
+                self,
+                move |_panel: crate::file_panel::FilePanel, filename: String| {
+                    if window.get_connection().is_none() {
+                        return;
+                    }
+                    let imp = window.imp();
+                    window.enqueue_items(
+                        vec![(filename, false)],
+                        imp.left_panel.current_path(),
+                        imp.right_panel.remote_path(),
+                        TransferDirection::Download,
+                    );
+                }
+            ),
+        );
+    }
 }
