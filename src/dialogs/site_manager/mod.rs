@@ -262,4 +262,16 @@ impl CargoSiteManagerDialog {
     pub fn take_connect_request(&self) -> Option<(SiteProfile, Option<String>)> {
         self.imp().connect_request.borrow_mut().take()
     }
+
+    /// Select a site by its unique ID so the form opens on that entry.
+    pub fn select_site_by_id(&self, id: &str) {
+        let store = self.imp().store.borrow();
+        let index = store.sites.iter().position(|s| s.id == id);
+        drop(store);
+        if let Some(idx) = index {
+            if let Some(row) = self.imp().sites_list.row_at_index(idx as i32) {
+                self.imp().sites_list.select_row(Some(&row));
+            }
+        }
+    }
 }

@@ -90,6 +90,8 @@ mod imp {
         pub connected_site_id: RefCell<Option<String>>,
         pub left_context_menu: RefCell<Option<gtk::PopoverMenu>>,
         pub right_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub sidebar_context_menu: RefCell<Option<gtk::PopoverMenu>>,
+        pub sidebar_context_site_id: RefCell<Option<String>>,
     }
 
     #[glib::object_subclass]
@@ -119,6 +121,9 @@ mod imp {
             if let Some(popover) = self.right_context_menu.take() {
                 popover.unparent();
             }
+            if let Some(popover) = self.sidebar_context_menu.take() {
+                popover.unparent();
+            }
         }
 
         fn constructed(&self) {
@@ -130,6 +135,7 @@ mod imp {
             obj.load_window_state();
             obj.setup_hidden_files_toggle();
             obj.setup_sidebar();
+            obj.setup_sidebar_context_menu();
             obj.setup_paned_position();
             obj.setup_site_manager_action();
             obj.setup_transfer_buttons();

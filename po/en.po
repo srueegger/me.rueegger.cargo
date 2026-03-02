@@ -530,3 +530,19 @@ msgstr "Enter passphrase for key"
 #: src/window/progress_indicator.rs
 msgid "Show File Operations"
 msgstr "Show File Operations"
+
+#
+# ── sidebar context menu ─────────────────────────────────────
+#
+
+#: src/window/sidebar.rs
+msgid "Edit"
+msgstr "Edit"
+
+#: src/window/sidebar.rs
+msgid "Delete Connection"
+msgstr "Delete Connection"
+
+#: src/window/sidebar.rs
+msgid "Are you sure you want to delete '%s'?"
+msgstr "Are you sure you want to delete '%s'?"
