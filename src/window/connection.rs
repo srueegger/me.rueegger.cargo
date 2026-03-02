@@ -28,6 +28,22 @@ impl CargoWindow {
         self.imp().toast_overlay.add_toast(toast);
     }
 
+    pub(crate) fn setup_connection_error_handler(&self) {
+        self.imp().right_panel.connect_closure(
+            "connection-error",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = window)]
+                self,
+                move |_panel: crate::file_panel::FilePanel, _msg: String| {
+                    if window.get_connection().is_some() {
+                        window.disconnect();
+                    }
+                }
+            ),
+        );
+    }
+
     pub(crate) fn initiate_connection(&self, profile: SiteProfile, password: Option<String>) {
         let config = profile.to_connection_config(password);
         let site_id = profile.id.clone();

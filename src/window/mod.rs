@@ -134,6 +134,7 @@ mod imp {
             obj.setup_refresh_button();
             obj.setup_drag_and_drop();
             obj.setup_context_menus();
+            obj.setup_connection_error_handler();
         }
     }
 
