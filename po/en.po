@@ -522,3 +522,11 @@ msgstr "Enter password"
 #: src/window.rs
 msgid "Enter passphrase for key"
 msgstr "Enter passphrase for key"
+
+#
+# ── progress indicator ───────────────────────────────────────
+#
+
+#: src/window/progress_indicator.rs
+msgid "Show File Operations"
+msgstr "Show File Operations"

@@ -52,6 +52,25 @@
                 </child>
               </object>
             </property>
+            <child type="bottom">
+              <object class="GtkRevealer" id="progress_revealer">
+                <property name="reveal-child">false</property>
+                <property name="transition-type">slide-up</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkSeparator"/>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="progress_box">
+                        <property name="orientation">horizontal</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
           </object>
         </property>
 

@@ -13,6 +13,7 @@ mod file_operations;
 mod drag_drop;
 mod context_menus;
 mod sync_nav;
+mod progress_indicator;
 
 use std::rc::Rc;
 
@@ -79,6 +80,10 @@ mod imp {
         pub sidebar_list: TemplateChild<gtk::ListBox>,
         #[template_child]
         pub sidebar_separator: TemplateChild<gtk::Separator>,
+        #[template_child]
+        pub progress_revealer: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub progress_box: TemplateChild<gtk::Box>,
 
         pub transfer_queue: OnceCell<Rc<TransferQueue>>,
         pub syncing: Cell<bool>,
@@ -135,6 +140,7 @@ mod imp {
             obj.setup_drag_and_drop();
             obj.setup_context_menus();
             obj.setup_connection_error_handler();
+            obj.setup_progress_indicator();
         }
     }
 
