@@ -107,13 +107,14 @@ impl TransferQueue {
             queue.is_processing.set(false);
             queue.reset_policy();
             Self::send_completion_notification(queue);
+            queue.clear_completed();
             return;
         };
 
         queue.is_processing.set(true);
         item.set_status(STATUS_ACTIVE);
 
-        let (progress_tx, progress_rx) = async_channel::unbounded::<TransferProgress>();
+        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(4);
 
         let item_ref = item.clone();
         // Progress monitor: update UI properties from progress channel
