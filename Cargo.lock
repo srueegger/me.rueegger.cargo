@@ -277,7 +277,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-app"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "async-channel",
  "async-trait",

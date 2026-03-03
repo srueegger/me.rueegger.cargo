@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.6.0\n"
+"Project-Id-Version: cargo-app 0.6.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -70,6 +70,22 @@ msgstr "Sidebar context menu to edit, delete, or disconnect sites"
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Connection error handling with user-visible messages"
 msgstr "Connection error handling with user-visible messages"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix memory leak causing OOM kills during large file transfers"
+msgstr "Fix memory leak causing OOM kills during large file transfers"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Throttle progress updates to reduce CPU and memory overhead"
+msgstr "Throttle progress updates to reduce CPU and memory overhead"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix signal handler accumulation in progress indicator and transfer list"
+msgstr "Fix signal handler accumulation in progress indicator and transfer list"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Auto-clear completed transfers from queue"
+msgstr "Auto-clear completed transfers from queue"
 
 #: data/ui/window.ui
 msgid "Site Manager"
