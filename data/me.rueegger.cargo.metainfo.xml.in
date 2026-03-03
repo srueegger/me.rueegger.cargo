@@ -38,6 +38,16 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.6.1" date="2026-03-03">
+      <description>
+        <ul>
+          <li>Fix memory leak causing OOM kills during large file transfers</li>
+          <li>Throttle progress updates to reduce CPU and memory overhead</li>
+          <li>Fix signal handler accumulation in progress indicator and transfer list</li>
+          <li>Auto-clear completed transfers from queue</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-03-02">
       <description>
         <ul>

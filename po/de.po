@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.6.0\n"
+"Project-Id-Version: cargo-app 0.6.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -80,6 +80,22 @@ msgstr "Kontextmenü in der Seitenleiste zum Bearbeiten, Löschen oder Trennen v
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Connection error handling with user-visible messages"
 msgstr "Verbindungsfehlerbehandlung mit sichtbaren Fehlermeldungen"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix memory leak causing OOM kills during large file transfers"
+msgstr "Speicherleck behoben, das bei grossen Dateiübertragungen zum Absturz führte"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Throttle progress updates to reduce CPU and memory overhead"
+msgstr "Fortschrittsaktualisierungen gedrosselt zur Reduzierung von CPU- und Speicherverbrauch"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix signal handler accumulation in progress indicator and transfer list"
+msgstr "Ansammlung von Signal-Handlern in Fortschrittsanzeige und Transferliste behoben"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Auto-clear completed transfers from queue"
+msgstr "Abgeschlossene Übertragungen werden automatisch aus der Warteschlange entfernt"
 
 #
 # ── Window UI ─────────────────────────────────────────────────

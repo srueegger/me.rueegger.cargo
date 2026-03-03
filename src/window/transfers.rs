@@ -112,15 +112,36 @@ impl CargoWindow {
             let pb = progress_bar.clone();
             let sl = status_label.clone();
             let item_clone = item.clone();
-            item.connect_notify_local(Some("progress"), move |item, _| {
+            let id1 = item.connect_notify_local(Some("progress"), move |item, _| {
                 pb.set_fraction(item.progress());
                 sl.set_label(&item_clone.status_label());
             });
 
             let sl2 = status_label.clone();
-            item.connect_notify_local(Some("status"), move |item, _| {
+            let id2 = item.connect_notify_local(Some("status"), move |item, _| {
                 sl2.set_label(&item.status_label());
             });
+
+            // Store handler IDs so unbind can disconnect them
+            unsafe {
+                list_item.set_data("signal-id-1", id1);
+                list_item.set_data("signal-id-2", id2);
+            }
+        });
+
+        factory.connect_unbind(|_, list_item| {
+            let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+            let item: TransferItem = list_item.item().and_downcast().unwrap();
+
+            // Disconnect signal handlers
+            unsafe {
+                if let Some(id1) = list_item.steal_data::<glib::SignalHandlerId>("signal-id-1") {
+                    item.disconnect(id1);
+                }
+                if let Some(id2) = list_item.steal_data::<glib::SignalHandlerId>("signal-id-2") {
+                    item.disconnect(id2);
+                }
+            }
         });
 
         imp.transfer_list_view.set_factory(Some(&factory));

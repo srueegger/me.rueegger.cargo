@@ -268,6 +268,7 @@ impl Protocol for SftpProtocol {
             .map_err(|e| ProtocolError::TransferFailed(e.to_string()))?;
 
         let mut bytes_transferred: u64 = 0;
+        let mut last_reported: u64 = 0;
         let mut buf = vec![0u8; 32768];
 
         loop {
@@ -287,13 +288,26 @@ impl Protocol for SftpProtocol {
             bytes_transferred += n as u64;
 
             if let Some(ref sender) = progress {
-                let _ = sender
-                    .send(TransferProgress {
-                        bytes_transferred,
-                        total_bytes,
-                    })
-                    .await;
+                if bytes_transferred - last_reported >= 262144 {
+                    last_reported = bytes_transferred;
+                    let _ = sender
+                        .send(TransferProgress {
+                            bytes_transferred,
+                            total_bytes,
+                        })
+                        .await;
+                }
             }
+        }
+
+        // Send final progress
+        if let Some(ref sender) = progress {
+            let _ = sender
+                .send(TransferProgress {
+                    bytes_transferred,
+                    total_bytes,
+                })
+                .await;
         }
 
         remote_file
@@ -331,6 +345,7 @@ impl Protocol for SftpProtocol {
             .map_err(|e| ProtocolError::TransferFailed(e.to_string()))?;
 
         let mut bytes_transferred: u64 = 0;
+        let mut last_reported: u64 = 0;
         let mut buf = vec![0u8; 32768];
 
         loop {
@@ -350,13 +365,26 @@ impl Protocol for SftpProtocol {
             bytes_transferred += n as u64;
 
             if let Some(ref sender) = progress {
-                let _ = sender
-                    .send(TransferProgress {
-                        bytes_transferred,
-                        total_bytes: Some(total_bytes),
-                    })
-                    .await;
+                if bytes_transferred - last_reported >= 262144 {
+                    last_reported = bytes_transferred;
+                    let _ = sender
+                        .send(TransferProgress {
+                            bytes_transferred,
+                            total_bytes: Some(total_bytes),
+                        })
+                        .await;
+                }
             }
+        }
+
+        // Send final progress
+        if let Some(ref sender) = progress {
+            let _ = sender
+                .send(TransferProgress {
+                    bytes_transferred,
+                    total_bytes: Some(total_bytes),
+                })
+                .await;
         }
 
         remote_file

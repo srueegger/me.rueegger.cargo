@@ -1,5 +1,5 @@
 project('cargo-app', 'rust',
-  version: '0.6.0',
+  version: '0.6.1',
   meson_version: '>= 1.1.0',
   license: 'GPL-2.0-only',
 )

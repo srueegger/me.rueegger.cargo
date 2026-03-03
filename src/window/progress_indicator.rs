@@ -1,8 +1,8 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::gettext;
-use gtk::{prelude::*, subclass::prelude::*};
+use gtk::{glib, prelude::*, subclass::prelude::*};
 
 use crate::transfer::item::*;
 
@@ -15,6 +15,10 @@ impl CargoWindow {
 
         // Shared state for the drawing function
         let progress_value = Rc::new(Cell::new(0.0f64));
+
+        // Track signal handler IDs so we can disconnect them
+        let signal_handlers: Rc<RefCell<Vec<(TransferItem, Vec<glib::SignalHandlerId>)>>> =
+            Rc::new(RefCell::new(Vec::new()));
 
         // --- Circular progress DrawingArea ---
         let drawing_area = gtk::DrawingArea::new();
@@ -149,11 +153,20 @@ impl CargoWindow {
             }
         });
 
-        // Rebuild popover rows
+        // Rebuild popover rows — also disconnects old signal handlers
         let rebuild_popover = Rc::new({
             let store = store.clone();
             let pop_list = pop_list.clone();
+            let signal_handlers = signal_handlers.clone();
             move || {
+                // Disconnect all old signal handlers first
+                let mut handlers = signal_handlers.borrow_mut();
+                for (item, ids) in handlers.drain(..) {
+                    for id in ids {
+                        item.disconnect(id);
+                    }
+                }
+
                 // Remove existing rows
                 while let Some(row) = pop_list.row_at_index(0) {
                     pop_list.remove(&row);
@@ -186,9 +199,10 @@ impl CargoWindow {
 
                     // Live-update the progress bar
                     let bar_clone = bar.clone();
-                    item.connect_notify_local(Some("progress"), move |item, _| {
+                    let id = item.connect_notify_local(Some("progress"), move |item, _| {
                         bar_clone.set_fraction(item.progress());
                     });
+                    handlers.push((item.clone(), vec![id]));
 
                     let row = gtk::ListBoxRow::builder()
                         .activatable(false)
@@ -200,25 +214,57 @@ impl CargoWindow {
             }
         });
 
+        // Track store-level signal handlers for progress/status notify
+        let store_item_handlers: Rc<RefCell<Vec<(TransferItem, Vec<glib::SignalHandlerId>)>>> =
+            Rc::new(RefCell::new(Vec::new()));
+
         // Connect to items-changed on the store
         let update_fn_changed = update_fn.clone();
         let rebuild_popover_changed = rebuild_popover.clone();
-        store.connect_items_changed(move |_store, _pos, _removed, added| {
-            // Connect progress/status notify on new items
+        let store_handlers_ref = store_item_handlers.clone();
+        store.connect_items_changed(move |_store, _pos, removed, added| {
+            // Clean up handlers for removed items
+            if removed > 0 {
+                let mut handlers = store_handlers_ref.borrow_mut();
+                // Collect items still in store
+                let mut active_items = std::collections::HashSet::new();
+                for i in 0.._store.n_items() {
+                    if let Some(obj) = _store.item(i) {
+                        let item: TransferItem = obj.downcast().unwrap();
+                        active_items.insert(item);
+                    }
+                }
+                // Disconnect handlers for items no longer in the store
+                let old_handlers = std::mem::take(&mut *handlers);
+                for (item, ids) in old_handlers {
+                    if active_items.contains(&item) {
+                        handlers.push((item, ids));
+                    } else {
+                        for id in ids {
+                            item.disconnect(id);
+                        }
+                    }
+                }
+            }
+
+            // Connect progress/status notify on new items only
             if added > 0 {
+                let mut handlers = store_handlers_ref.borrow_mut();
                 for i in _pos..(_pos + added) {
                     let Some(obj) = _store.item(i) else { continue };
                     let item: TransferItem = obj.downcast().unwrap();
 
                     let uf = update_fn_changed.clone();
-                    item.connect_notify_local(Some("progress"), move |_, _| {
+                    let id1 = item.connect_notify_local(Some("progress"), move |_, _| {
                         uf();
                     });
 
                     let uf2 = update_fn_changed.clone();
-                    item.connect_notify_local(Some("status"), move |_, _| {
+                    let id2 = item.connect_notify_local(Some("status"), move |_, _| {
                         uf2();
                     });
+
+                    handlers.push((item.clone(), vec![id1, id2]));
                 }
             }
 
