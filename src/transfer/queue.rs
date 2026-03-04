@@ -122,12 +122,12 @@ impl TransferQueue {
         queue.is_processing.set(true);
         item.set_status(STATUS_ACTIVE);
 
-        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(64);
+        let (progress_tx, progress_rx) = async_channel::unbounded::<TransferProgress>();
 
+        // Poll progress channel from GTK main loop timer (avoids cross-runtime waker issues)
         let item_ref = item.clone();
-        // Progress monitor: update UI properties from progress channel
-        glib::spawn_future_local(async move {
-            while let Ok(p) = progress_rx.recv().await {
+        glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
+            while let Ok(p) = progress_rx.try_recv() {
                 item_ref.set_bytes_transferred(p.bytes_transferred);
                 if let Some(total) = p.total_bytes {
                     item_ref.set_total_bytes(total);
@@ -136,6 +136,11 @@ impl TransferQueue {
                             .set_progress(p.bytes_transferred as f64 / total as f64);
                     }
                 }
+            }
+            if progress_rx.is_closed() && progress_rx.is_empty() {
+                glib::ControlFlow::Break
+            } else {
+                glib::ControlFlow::Continue
             }
         });
 
