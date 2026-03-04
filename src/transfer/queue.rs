@@ -25,6 +25,7 @@ pub struct TransferQueue {
     store: gio::ListStore,
     is_processing: Cell<bool>,
     conflict_policy: RefCell<Option<ConflictAction>>,
+    hold_guard: RefCell<Option<gio::ApplicationHoldGuard>>,
 }
 
 impl TransferQueue {
@@ -33,6 +34,7 @@ impl TransferQueue {
             store: gio::ListStore::new::<TransferItem>(),
             is_processing: Cell::new(false),
             conflict_policy: RefCell::new(None),
+            hold_guard: RefCell::new(None),
         }
     }
 
@@ -81,6 +83,10 @@ impl TransferQueue {
         if queue.is_processing.get() {
             return;
         }
+        // Keep the application alive while transfers are active
+        if let Some(app) = gio::Application::default() {
+            *queue.hold_guard.borrow_mut() = Some(app.hold());
+        }
         Self::process_next(queue, connection, left_panel, right_panel, window);
     }
 
@@ -108,13 +114,15 @@ impl TransferQueue {
             queue.reset_policy();
             Self::send_completion_notification(queue);
             queue.clear_completed();
+            // Release the application hold now that transfers are done
+            queue.hold_guard.borrow_mut().take();
             return;
         };
 
         queue.is_processing.set(true);
         item.set_status(STATUS_ACTIVE);
 
-        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(4);
+        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(64);
 
         let item_ref = item.clone();
         // Progress monitor: update UI properties from progress channel

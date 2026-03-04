@@ -290,24 +290,20 @@ impl Protocol for SftpProtocol {
             if let Some(ref sender) = progress {
                 if bytes_transferred - last_reported >= 262144 {
                     last_reported = bytes_transferred;
-                    let _ = sender
-                        .send(TransferProgress {
-                            bytes_transferred,
-                            total_bytes,
-                        })
-                        .await;
+                    let _ = sender.try_send(TransferProgress {
+                        bytes_transferred,
+                        total_bytes,
+                    });
                 }
             }
         }
 
         // Send final progress
         if let Some(ref sender) = progress {
-            let _ = sender
-                .send(TransferProgress {
-                    bytes_transferred,
-                    total_bytes,
-                })
-                .await;
+            let _ = sender.try_send(TransferProgress {
+                bytes_transferred,
+                total_bytes,
+            });
         }
 
         remote_file
@@ -367,24 +363,20 @@ impl Protocol for SftpProtocol {
             if let Some(ref sender) = progress {
                 if bytes_transferred - last_reported >= 262144 {
                     last_reported = bytes_transferred;
-                    let _ = sender
-                        .send(TransferProgress {
-                            bytes_transferred,
-                            total_bytes: Some(total_bytes),
-                        })
-                        .await;
+                    let _ = sender.try_send(TransferProgress {
+                        bytes_transferred,
+                        total_bytes: Some(total_bytes),
+                    });
                 }
             }
         }
 
         // Send final progress
         if let Some(ref sender) = progress {
-            let _ = sender
-                .send(TransferProgress {
-                    bytes_transferred,
-                    total_bytes: Some(total_bytes),
-                })
-                .await;
+            let _ = sender.try_send(TransferProgress {
+                bytes_transferred,
+                total_bytes: Some(total_bytes),
+            });
         }
 
         remote_file

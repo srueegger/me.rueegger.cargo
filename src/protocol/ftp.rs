@@ -74,24 +74,20 @@ macro_rules! ftp_download_impl {
             if let Some(ref sender) = $progress {
                 if bytes_transferred - last_reported >= 262144 {
                     last_reported = bytes_transferred;
-                    let _ = sender
-                        .send(TransferProgress {
-                            bytes_transferred,
-                            total_bytes: total_bytes.map(|s| s as u64),
-                        })
-                        .await;
+                    let _ = sender.try_send(TransferProgress {
+                        bytes_transferred,
+                        total_bytes: total_bytes.map(|s| s as u64),
+                    });
                 }
             }
         }
 
         // Send final progress
         if let Some(ref sender) = $progress {
-            let _ = sender
-                .send(TransferProgress {
-                    bytes_transferred,
-                    total_bytes: total_bytes.map(|s| s as u64),
-                })
-                .await;
+            let _ = sender.try_send(TransferProgress {
+                bytes_transferred,
+                total_bytes: total_bytes.map(|s| s as u64),
+            });
         }
 
         $ftp.finalize_retr_stream(reader)
@@ -142,24 +138,20 @@ macro_rules! ftp_upload_impl {
             if let Some(ref sender) = $progress {
                 if bytes_transferred - last_reported >= 262144 {
                     last_reported = bytes_transferred;
-                    let _ = sender
-                        .send(TransferProgress {
-                            bytes_transferred,
-                            total_bytes: Some(total_bytes),
-                        })
-                        .await;
+                    let _ = sender.try_send(TransferProgress {
+                        bytes_transferred,
+                        total_bytes: Some(total_bytes),
+                    });
                 }
             }
         }
 
         // Send final progress
         if let Some(ref sender) = $progress {
-            let _ = sender
-                .send(TransferProgress {
-                    bytes_transferred,
-                    total_bytes: Some(total_bytes),
-                })
-                .await;
+            let _ = sender.try_send(TransferProgress {
+                bytes_transferred,
+                total_bytes: Some(total_bytes),
+            });
         }
 
         $ftp.finalize_put_stream(writer)

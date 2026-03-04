@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.6.1\n"
+"Project-Id-Version: cargo-app 0.6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -80,6 +80,14 @@ msgstr "Kontextmenü in der Seitenleiste zum Bearbeiten, Löschen oder Trennen v
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Connection error handling with user-visible messages"
 msgstr "Verbindungsfehlerbehandlung mit sichtbaren Fehlermeldungen"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix progress bar not updating during file transfers"
+msgstr "Fortschrittsbalken wird während Dateiübertragungen wieder korrekt aktualisiert"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Prevent application from being killed during active transfers"
+msgstr "Verhindern, dass die Anwendung während aktiver Übertragungen beendet wird"
 
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Fix memory leak causing OOM kills during large file transfers"
