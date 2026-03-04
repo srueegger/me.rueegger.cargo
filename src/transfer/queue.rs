@@ -114,7 +114,7 @@ impl TransferQueue {
         queue.is_processing.set(true);
         item.set_status(STATUS_ACTIVE);
 
-        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(4);
+        let (progress_tx, progress_rx) = async_channel::bounded::<TransferProgress>(64);
 
         let item_ref = item.clone();
         // Progress monitor: update UI properties from progress channel
