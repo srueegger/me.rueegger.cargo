@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cargo-app 0.6.1\n"
+"Project-Id-Version: cargo-app 0.6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-24\n"
 "PO-Revision-Date: 2026-02-24\n"
@@ -70,6 +70,14 @@ msgstr "Sidebar context menu to edit, delete, or disconnect sites"
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Connection error handling with user-visible messages"
 msgstr "Connection error handling with user-visible messages"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Fix progress bar not updating during file transfers"
+msgstr "Fix progress bar not updating during file transfers"
+
+#: data/me.rueegger.cargo.metainfo.xml.in
+msgid "Prevent application from being killed during active transfers"
+msgstr "Prevent application from being killed during active transfers"
 
 #: data/me.rueegger.cargo.metainfo.xml.in
 msgid "Fix memory leak causing OOM kills during large file transfers"
