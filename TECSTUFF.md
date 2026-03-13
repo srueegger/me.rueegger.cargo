@@ -117,7 +117,7 @@ meson compile -C build-release
 meson devenv -C build cargo-app
 ```
 
-### Flatpak Build (in Distrobox)
+### Flatpak Build
 
 ```bash
 # Generate cargo-sources.json first
