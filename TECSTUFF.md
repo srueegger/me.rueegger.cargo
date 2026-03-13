@@ -332,6 +332,6 @@ Periodically audit `Cargo.toml` and update any outdated dependencies.
 | tokio | 1.49 | Async runtime |
 | async-channel | 2.5 | Cross-thread communication |
 | async-trait | 0.1 | Async trait support |
-| libsecret | 0.7 | GNOME Keyring integration (password storage) |
+| libsecret | 0.8 | GNOME Keyring integration (password storage) |
 | thiserror | 2.0 | Derive macro for error types |
 | log | 0.4 | Logging facade |
