@@ -236,6 +236,14 @@ impl CargoSiteManagerDialog {
                 dialog.save_current_form();
             }
         ));
+
+        self.imp().password_entry.connect_changed(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |_| {
+                dialog.save_current_form();
+            }
+        ));
     }
 
     fn on_site_selected(&self, row: Option<&gtk::ListBoxRow>) {

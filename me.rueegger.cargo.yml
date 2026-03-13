@@ -17,6 +17,7 @@ finish-args:
   - --filesystem=/media
   - --filesystem=/run/media
   - --socket=ssh-auth
+  - --talk-name=org.freedesktop.secrets
 
 build-options:
   append-path: /usr/lib/sdk/rust-stable/bin

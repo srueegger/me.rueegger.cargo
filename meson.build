@@ -13,6 +13,7 @@ dependency('glib-2.0', version: '>= 2.86')
 dependency('gio-2.0', version: '>= 2.86')
 dependency('gtk4', version: '>= 4.20')
 dependency('libadwaita-1', version: '>= 1.8')
+dependency('libsecret-1', version: '>= 0.20')
 
 profile = get_option('profile')
 if profile == 'release'

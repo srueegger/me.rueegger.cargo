@@ -12,6 +12,7 @@ mod connection;
 mod dialogs;
 mod file_item;
 mod file_panel;
+mod keyring;
 mod protocol;
 mod site_manager;
 mod transfer;
