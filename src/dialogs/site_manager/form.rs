@@ -4,6 +4,7 @@ use adw::prelude::*;
 
 use gettextrs::gettext;
 
+use crate::keyring;
 use crate::site_manager::{AuthMethodType, SerializableProtocol, SiteProfile};
 
 use super::CargoSiteManagerDialog;
@@ -45,8 +46,10 @@ impl CargoSiteManagerDialog {
             imp.key_file_row.set_subtitle(&display);
         }
         imp.key_file_row.set_visible(auth_index == 1);
-        // Password: visible for Password (0) and KeyFile passphrase (1), clear on site switch
-        imp.password_entry.set_text("");
+        // Password: visible for Password (0) and KeyFile passphrase (1)
+        // Load saved password from keyring
+        let stored_pw = keyring::lookup_password(&site.id);
+        imp.password_entry.set_text(stored_pw.as_deref().unwrap_or(""));
         imp.password_entry.set_visible(auth_index != 2);
 
         // Directories
@@ -109,9 +112,19 @@ impl CargoSiteManagerDialog {
         let site_name = site.name.clone();
         let site_host = site.host.clone();
         let site_port = site.port;
+        let site_id = site.id.clone();
         drop(store);
 
         self.update_selected_row_label(&site_name, &site_host, site_port);
+
+        // Store password in system keyring
+        let password_text = imp.password_entry.text().to_string();
+        if password_text.is_empty() {
+            keyring::clear_password(&site_id);
+        } else {
+            let label = format!("Cargo: {}", site_name);
+            keyring::store_password(&site_id, &label, &password_text);
+        }
 
         let store = self.imp().store.borrow();
         if let Err(e) = store.save() {

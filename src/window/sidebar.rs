@@ -4,6 +4,7 @@ use adw::prelude::*;
 
 use gettextrs::gettext;
 
+use crate::keyring;
 use crate::site_manager::{AuthMethodType, SiteStore};
 
 use super::CargoWindow;
@@ -196,6 +197,7 @@ impl CargoWindow {
                             let Some(window) = window_weak.upgrade() else {
                                 return;
                             };
+                            keyring::clear_password(&id_clone);
                             let mut store = SiteStore::load();
                             store.remove(&id_clone);
                             if let Err(e) = store.save() {
@@ -293,6 +295,13 @@ impl CargoWindow {
                 self.initiate_connection(profile, None);
             }
             AuthMethodType::Password | AuthMethodType::KeyFile { .. } => {
+                // Try loading password from keyring first
+                let stored_pw = keyring::lookup_password(&profile.id);
+                if stored_pw.is_some() {
+                    self.initiate_connection(profile, stored_pw);
+                    return;
+                }
+
                 let heading = gettext("Connect to %s").replace("%s", &profile.name);
                 let body = match &profile.auth_method {
                     AuthMethodType::KeyFile { .. } => gettext("Enter passphrase for key"),

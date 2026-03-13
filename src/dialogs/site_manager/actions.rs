@@ -4,6 +4,7 @@ use adw::prelude::*;
 
 use gettextrs::gettext;
 
+use crate::keyring;
 use crate::site_manager::{SiteProfile, SiteStore};
 
 use super::CargoSiteManagerDialog;
@@ -61,6 +62,9 @@ impl CargoSiteManagerDialog {
     pub(crate) fn on_delete_site(&self) {
         let selected_id = self.imp().selected_id.borrow().clone();
         if let Some(id) = selected_id {
+            // Remove password from keyring
+            keyring::clear_password(&id);
+
             {
                 let mut store = self.imp().store.borrow_mut();
                 store.remove(&id);

@@ -58,6 +58,19 @@ See `CargoWindow` for the reference implementation.
 - **glib::spawn_future_local**: UI-safe async operations on the GTK main loop
 - GTK widgets are NEVER accessed from Tokio threads
 
+### Password Storage (Keyring)
+
+Passwords are stored securely in the system keyring via `libsecret` (GNOME Keyring / Secret Service API).
+
+- **Schema**: `me.rueegger.cargo.Password` with a `site-id` attribute
+- **Storage**: Passwords are stored/retrieved per site profile ID
+- **Site Manager**: Password field is auto-populated from keyring when selecting a site
+- **Sidebar Connect**: If a password exists in the keyring, connects directly without prompting
+- **Deletion**: Passwords are removed from the keyring when a site is deleted
+- **Flatpak**: Requires `--talk-name=org.freedesktop.secrets` in finish-args
+
+Passwords are never written to `sites.json` on disk.
+
 ### Protocol Abstraction
 
 New protocols can be added by implementing the `Protocol` trait:
@@ -104,7 +117,7 @@ meson compile -C build-release
 meson devenv -C build cargo-app
 ```
 
-### Flatpak Build (in Distrobox)
+### Flatpak Build
 
 ```bash
 # Generate cargo-sources.json first
@@ -233,6 +246,7 @@ me.rueegger.cargo/
     ├── file_item.rs        # GObject wrapper for file list entries
     ├── file_panel.rs       # Dual-pane file browser panel widget
     ├── site_manager.rs     # Site profile persistence (JSON)
+    ├── keyring.rs          # Password storage via libsecret (system keyring)
     │
     ├── window/             # Main application window
     │   ├── mod.rs          # imp struct, TemplateChild fields, core setup
@@ -318,5 +332,6 @@ Periodically audit `Cargo.toml` and update any outdated dependencies.
 | tokio | 1.49 | Async runtime |
 | async-channel | 2.5 | Cross-thread communication |
 | async-trait | 0.1 | Async trait support |
+| libsecret | 0.8 | GNOME Keyring integration (password storage) |
 | thiserror | 2.0 | Derive macro for error types |
 | log | 0.4 | Logging facade |

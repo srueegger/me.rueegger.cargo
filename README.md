@@ -55,6 +55,7 @@ Requirements:
 - Meson >= 1.1
 - GTK4 >= 4.20
 - libadwaita >= 1.8
+- libsecret >= 0.20
 - gettext
 
 ```bash

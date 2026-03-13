@@ -1,6 +1,6 @@
 [package]
 name = "cargo-app"
-version = "0.6.3"
+version = "0.7.0"
 edition = "2021"
 license = "GPL-2.0-only"
 authors = ["Samuel Rüegger"]
@@ -28,6 +28,9 @@ async-channel = "2.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4"] }
+
+# Secret storage
+libsecret = "0.8"
 
 # Utilities
 thiserror = "2.0"
